@@ -5,27 +5,25 @@ import (
 	"strings"
 )
 
-type Rule interface {
-    Apply(to string) string
+type Rule struct {
+	from, to, env     string
+	precond, postcond string
 }
 
-type SimpleRule struct {
-	from, to, env string
-    precond, postcond string
-}
-
-func NewRule(rule string) Rule {
-	r := &SimpleRule{}
+func NewRule(rule string) *Rule {
+	r := &Rule{}
 
 	r.split(rule)
+
+	r.parseEnv()
 
 	return r
 }
 
-func (r *SimpleRule) split(rule string) {
+func (r *Rule) split(rule string) {
 	pointer := 0
-	for i, char := range rule {
-		switch char {
+	for i := 0; i < len(rule); i++ {
+		switch rule[i] {
 		case '>':
 			if r.from == "" {
 				r.from = strings.TrimSpace(rule[pointer:i])
@@ -43,60 +41,59 @@ func (r *SimpleRule) split(rule string) {
 		r.env = strings.TrimSpace(rule[pointer:])
 	}
 
-    r.to = strings.TrimSpace(r.to)
+	r.to = strings.TrimSpace(r.to)
 }
 
-/*func (r *SimpleRule) parseEnv() {
-    for i := 0; i < len(r.env); i++ {
-        switch r.env[i] {
-            case '_':
-            
-        }
-    }
-}*/
-
-func (r *SimpleRule) Apply(to string) string {
-    return replace(to, r.from, r.to)
+func (r *Rule) parseEnv() error {
+	split := strings.SplitN(r.env, "_", 2)
+	if len(split) != 2 {
+		return fmt.Errorf("enviornment \"%s\" not in format \"{precondition} _ {postcondition}\"", r.env)
+	}
+	r.precond, r.postcond = strings.TrimSpace(split[0]), strings.TrimSpace(split[1])
+	return nil
 }
 
-/*
-func trim(x string) string {
-    lx := len(x)
-    f, e := 0, lx - 1
-    for ; f < lx && x[f] == ' '; f++ {}
-    for ; e >= f && x[e] == ' '; e-- {}
-    return x[f:e + 1]
-}
-*/
+func (r *Rule) Apply(text string) string {
+	b := strings.Builder{}
 
-func replace(x string, find string, with string) string {
-    ftil, cr, flen := 0, find[0], len(find)
+	fi := 0 // find index
+	findArr := []string{r.precond, r.from, r.postcond}
+	stage := 0
+	p0, p1 := 0, 0
 
-    b := strings.Builder{}
+	lastWritten := 0
 
-    last := 0
-    
-    for i := 0; i < len(x); i++ {
-        char := x[i]
+	for i := 0; i < len(text); i++ {
+		if len(findArr[stage]) == 0 || text[i] == findArr[stage][fi] {
+			fi++
+			if fi >= len(findArr[stage]) {
+				// found!
+			stageInc:
+				stage++
+				switch stage {
+				case 1: // just found precond
+					p0 = i + 1
+				case 2: // just found "find"
+					p1 = i + 1
+				case 3:
+					stage = 0
+					b.WriteString(text[lastWritten:p0])
+					b.WriteString(r.to)
+					i = p1 - 1 // i = p1; i++ later, so -1
+					lastWritten = p1
+				}
 
-        fmt.Println(char)
-        if char == cr {
-            ftil++
-            if ftil >= flen {
-                b.WriteString(x[last:i+1-flen])
-                b.WriteString(with)
-                ftil = 0
-                last = i+1
-            }
-            cr = find[ftil]
-        } else if ftil != 0 {
-            ftil = 0
-            cr = find[0]
-        }
-    }
-    b.WriteString(x[last:])
-    
-    return b.String()
+				if len(findArr[stage]) == 0 {
+					goto stageInc
+				}
+
+				fi = 0
+			}
+		}
+	}
+
+	b.WriteString(text[lastWritten:])
+	return b.String()
 }
 
 // [+stop+consonant+alveolar] > r / [+vowel+stress] _ [+vowel-stress]
