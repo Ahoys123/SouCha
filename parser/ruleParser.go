@@ -1,16 +1,20 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Rule interface {
-    Apply(to []rune) []rune
+    Apply(to string) string
 }
 
 type SimpleRule struct {
-	from, to, env []rune
+	from, to, env string
+    precond, postcond string
 }
 
-func NewRule(rule []rune) Rule {
+func NewRule(rule string) Rule {
 	r := &SimpleRule{}
 
 	r.split(rule)
@@ -18,13 +22,13 @@ func NewRule(rule []rune) Rule {
 	return r
 }
 
-func (r *SimpleRule) split(rule []rune) {
+func (r *SimpleRule) split(rule string) {
 	pointer := 0
 	for i, char := range rule {
 		switch char {
 		case '>':
-			if r.from == nil {
-				r.from = trim(rule[pointer:i])
+			if r.from == "" {
+				r.from = strings.TrimSpace(rule[pointer:i])
 			}
 			pointer = i + 1
 		case '/':
@@ -33,62 +37,66 @@ func (r *SimpleRule) split(rule []rune) {
 		}
 	}
 
-	if r.to == nil {
+	if r.to == "" {
 		r.to = rule[pointer:]
 	} else {
-		r.env = trim(rule[pointer:])
+		r.env = strings.TrimSpace(rule[pointer:])
 	}
 
-    r.to = trim(r.to)
+    r.to = strings.TrimSpace(r.to)
 }
 
-func (r *SimpleRule) Apply(to []rune) []rune {
+/*func (r *SimpleRule) parseEnv() {
+    for i := 0; i < len(r.env); i++ {
+        switch r.env[i] {
+            case '_':
+            
+        }
+    }
+}*/
+
+func (r *SimpleRule) Apply(to string) string {
     return replace(to, r.from, r.to)
 }
 
-func trim(x []rune) []rune {
+/*
+func trim(x string) string {
     lx := len(x)
     f, e := 0, lx - 1
     for ; f < lx && x[f] == ' '; f++ {}
     for ; e >= f && x[e] == ' '; e-- {}
     return x[f:e + 1]
 }
+*/
 
-func replace(x []rune, find []rune, with []rune) []rune {
-    ftil, cr, flen, wlen := 0, find[0], len(find), len(with)
-    for i := 0; i <= len(x) - flen; i++ {
+func replace(x string, find string, with string) string {
+    ftil, cr, flen := 0, find[0], len(find)
+
+    b := strings.Builder{}
+
+    last := 0
+    
+    for i := 0; i < len(x); i++ {
         char := x[i]
-        
-        fmt.Println("\n", x, i)
+
+        fmt.Println(char)
         if char == cr {
             ftil++
             if ftil >= flen {
-                x = indexReplace(x, i, flen, with, wlen)
-                i += wlen - flen
+                b.WriteString(x[last:i+1-flen])
+                b.WriteString(with)
                 ftil = 0
+                last = i+1
             }
             cr = find[ftil]
+        } else if ftil != 0 {
+            ftil = 0
+            cr = find[0]
         }
     }
-    return x
-}
-
-func indexReplace(x []rune, i int, flen int, with []rune, wlen int) []rune {
-    // if 1 : 1 correspondence, replace letters directly
-    if wlen == flen {
-        for j := 0; j < flen; j++ {
-            x[i + j] = with[j]
-        }
-        return x
-    }
-
-    // if not, must allocate another slice
-    fmt.Println(x[:i], with, x[i+flen:])
+    b.WriteString(x[last:])
     
-    b := append(append(x[:i], with...), x[i+flen:]...) 
-    fmt.Println(string(b))
-    return b
-    // x[:i] + with + x[i+wlen:]
+    return b.String()
 }
 
 // [+stop+consonant+alveolar] > r / [+vowel+stress] _ [+vowel-stress]

@@ -7,8 +7,8 @@ type Language struct {
 }
 
 func NewLanguage(test string) (l *Language) {
-    r := NewRule([]rune("a > ba / c"))
-    fmt.Println(string(r.Apply([]rune("ann"))))
+    r := NewRule("xa >  / c")
+    fmt.Println(r.Apply("baxmaxa"))
     /*
     ctx, err := NewRuleContext(map[string][]string{
         //"bilabial" : {"p", "b"},

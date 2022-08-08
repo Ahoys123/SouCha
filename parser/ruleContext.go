@@ -67,34 +67,34 @@ type GroupHash int
 /*
 
 Base
-a > b
-a >  
+[X] a > b 
+[X] a >  
     // a gets deleted everywhere
 
 Enviornments
-a > b / c _ d
+[ ] a > b / c _ d
 
 Basic unnamed sets
-a b > c
-a b > c d
-{a b} c > d e
-{a {b c} d} e > {f g h} i
+[ ] a b > c
+[ ] a b > c d
+[ ] {a b} c > d e
+[ ] {a {b c} d} e > {f g h} i
 
 Basic named sets
-[a] > b
-[a] > [b]
+[ ] [a] > b
+[ ] [a] > [b]
     // provided len(a) == len(b)
 
 Arithmitic with named sets intrasectionally
-[a+b] > c
-[a+b+c] > d
-[a-b] > c
-[a+b-c] > d
-[a-b-c] > d
-[a-(b-c)] > d
+[ ] [a+b] > c
+[ ] [a+b+c] > d
+[ ] [a-b] > c
+[ ] [a+b-c] > d
+[ ] [a-b-c] > d
+[ ] [a-(b-c)] > d
 
 Arithmitic with named sets intersectionally (see Implementation)
-[a] > *[-a]
+[ ] [a] > *[-a]
 */
 
 
