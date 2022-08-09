@@ -37,6 +37,7 @@ func (r *Rule) split(rule string) {
 
 	if r.to == "" {
 		r.to = rule[pointer:]
+		r.env = "_"
 	} else {
 		r.env = strings.TrimSpace(rule[pointer:])
 	}

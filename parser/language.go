@@ -7,6 +7,9 @@ type Language struct{}
 func NewLanguage(test string) (l *Language) {
 	r := NewRule("日 > 火 / 喪 _ 喪")
 	fmt.Println(r.Apply("喪日喪日喪"))
+
+	x, _ := setify("{{aaa bbb} ccc}")
+	fmt.Println(x)
 	return &Language{}
 }
 
