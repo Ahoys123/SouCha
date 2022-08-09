@@ -1,31 +1,72 @@
 package parser
 
-type Node interface {
-	GetValue() []Value
-}
+type Sequence []Tree
 
-type Set []Node
-
-func (s Set) GetValue() []Value {
-	tr := []Value{}
+func (s Sequence) GetValue() []value {
+	tr := []value{}
 	for _, c := range s {
 		tr = append(tr, c.GetValue()...)
 	}
 	return tr
 }
 
-type Value string
-
-func (v Value) String() string {
-	return "\"" + string(v) + "\""
+type Tree interface {
+	GetValue() []value
 }
 
-func (v Value) GetValue() []Value {
-	return []Value{v}
+type set []Tree
+
+func (s set) GetValue() []value {
+	tr := []value{}
+	for _, c := range s {
+		tr = append(tr, c.GetValue()...)
+	}
+	return tr
 }
 
-func setify(x string) (Node, int) {
-	cons := Set{}
+type value string
+
+func (v value) GetValue() []value {
+	return []value{v}
+}
+
+func MatchStart(s Tree, text string) ([]int, int) {
+	switch e := s.(type) {
+	case value:
+		elen := len(e)
+		if len(text) >= elen && text[:elen] == string(e) {
+			return []int{}, elen
+		}
+		return nil, -1
+	case set:
+		for i, v := range e {
+			path, mlen := MatchStart(v, text)
+			if mlen != -1 {
+				return append(path, i), mlen
+			}
+		}
+		return nil, -1
+	case nil:
+		return nil, 0
+	}
+	return nil, -1
+}
+
+func FollowPath(s Tree, path []int) value {
+	switch e := s.(type) {
+	case set:
+		return FollowPath(e[path[len(path)-1]], path[:len(path)-1])
+	case value:
+		return e
+	}
+	return ""
+}
+
+// setify parses a string and returns a tree and the number of characters it consumed from the input.
+//
+// returns -1 if entire input was consumed
+func setify(x string) (Tree, int) {
+	cons := set{}
 	start := 0
 	for i := 0; i < len(x); i++ {
 		switch x[i] {
@@ -39,25 +80,25 @@ func setify(x string) (Node, int) {
 
 		case '}':
 			if i > start {
-				cons = append(cons, Value(x[start:i]))
+				cons = append(cons, value(x[start:i]))
 			}
 			return reduce(cons), i
 		case ' ', ',':
 			if i > start {
-				cons = append(cons, Value(x[start:i]))
+				cons = append(cons, value(x[start:i]))
 			}
 			start = i + 1
 		}
 	}
 
-	if len(x) > start+1 {
-		cons = append(cons, Value(x[start:]))
+	if len(x) > start {
+		cons = append(cons, value(x[start:]))
 	}
 
 	return reduce(cons), -1
 }
 
-func reduce(s Set) Node {
+func reduce(s set) Tree {
 	switch len(s) {
 	case 0:
 		return nil

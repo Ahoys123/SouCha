@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-    "main/parser"
+	"main/parser"
 )
 
 func main() {
 	fmt.Println("Hello, World!")
-    parser.NewLanguage("hello")
+	parser.NewLanguage("hello")
 }

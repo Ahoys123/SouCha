@@ -5,18 +5,18 @@ import "fmt"
 type Language struct{}
 
 func NewLanguage(test string) (l *Language) {
-	r := NewRule("日 > 火 / 喪 _ 喪")
-	fmt.Println(r.Apply("喪日喪日喪"))
+	r := NewRule("日ⁱ > 火 / 喪 _ 喪")
+	fmt.Println(r.Apply("喪日ⁱ喪日ⁱ喪"))
 
-	x, _ := setify("{{aaa bbb} ccc}")
-	fmt.Println(x)
+	//r1 := NewRule("dʒ > tʃ > ʃ")
+	//fmt.Println(r1.Apply("tʃeidʒ aratsa"))
 	return &Language{}
 }
 
 /*
 
 reserved chars:
-> / _ { } [ ] + - ( )
+> / _ { } [ ] + - ( ) #
     maybe ? * =
 
 Base
@@ -28,10 +28,10 @@ Enviornments
 [X] a > b / c _ d
 
 Basic unnamed sets
-[ ] a b > c
-[ ] a b > c d
-[ ] {a b} c > d e
-[ ] {a {b c} d} e > {f g h} i
+[X] a b > c
+[X] a b > c d
+[X] {a b} c > d e
+[X] {a {b c} d} e > {f g h} i
 
 Basic named sets
 [ ] [a] > b
