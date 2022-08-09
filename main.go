@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"main/parser"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
-	parser.NewLanguage("hello")
+	parser.NewLanguage("b n > a / _ i", "binib")
+	// a{b c}d > b
 }

@@ -1,109 +1,152 @@
 package parser
 
-type Sequence []Tree
+import (
+	"fmt"
+)
 
-func (s Sequence) GetValue() []value {
-	tr := []value{}
-	for _, c := range s {
-		tr = append(tr, c.GetValue()...)
-	}
-	return tr
+type Matchable interface {
+	// MatchStart returns if the begining of text matches.
+	MatchStart(txt string) (int, []int)
+	// FollowPath returns the equivielent strucutre
+	FollowPath(path []int) string
 }
 
-type Tree interface {
-	GetValue() []value
-}
-
-type set []Tree
-
-func (s set) GetValue() []value {
-	tr := []value{}
-	for _, c := range s {
-		tr = append(tr, c.GetValue()...)
-	}
-	return tr
-}
-
-type value string
-
-func (v value) GetValue() []value {
-	return []value{v}
-}
-
-func MatchStart(s Tree, text string) ([]int, int) {
-	switch e := s.(type) {
-	case value:
-		elen := len(e)
-		if len(text) >= elen && text[:elen] == string(e) {
-			return []int{}, elen
-		}
-		return nil, -1
-	case set:
-		for i, v := range e {
-			path, mlen := MatchStart(v, text)
-			if mlen != -1 {
-				return append(path, i), mlen
+// NewMatchable creates a new matchable
+func NewMatchable(txt string) (Matchable, int) {
+	set, seq := &Set{}, &Sequence{}
+	lci := 0 // last commit index
+	for i := 0; i < len(txt); i++ {
+		switch txt[i] {
+		case '{':
+			if i > lci {
+				seq.arr = append(seq.arr, &Value{txt[lci:i]})
 			}
+			m, last := NewMatchable(txt[i+1:])
+			seq.arr = append(seq.arr, collapse(m))
+
+			i += last
+			lci = i + 1
+		case '}':
+			if i > lci {
+				seq.arr = append(seq.arr, &Value{txt[lci:i]})
+			}
+			if len(seq.arr) != 0 {
+				set.arr = append(set.arr, collapse(seq))
+			}
+			return set, i + 1
+		case ' ', ',':
+			if i > lci {
+				seq.arr = append(seq.arr, &Value{txt[lci:i]})
+			}
+			if len(seq.arr) != 0 {
+				set.arr = append(set.arr, collapse(seq))
+				seq = &Sequence{}
+			}
+			lci = i + 1
 		}
-		return nil, -1
-	case nil:
-		return nil, 0
 	}
-	return nil, -1
+
+	if len(txt) > lci {
+		seq.arr = append(seq.arr, &Value{txt[lci:]})
+	}
+	if len(seq.arr) != 0 {
+		set.arr = append(set.arr, collapse(seq))
+		seq = &Sequence{}
+	}
+
+	return collapse(set), len(seq.arr)
 }
 
-func FollowPath(s Tree, path []int) value {
-	switch e := s.(type) {
-	case set:
-		return FollowPath(e[path[len(path)-1]], path[:len(path)-1])
-	case value:
+func collapse(m Matchable) Matchable {
+	switch e := m.(type) {
+	case *Sequence:
+		switch len(e.arr) {
+		case 0:
+			return nil
+		case 1:
+			return e.arr[0]
+		default:
+			return e
+		}
+	case *Set:
+		switch len(e.arr) {
+		case 0:
+			return nil
+		case 1:
+			return e.arr[0]
+		default:
+			return e
+		}
+	default:
 		return e
 	}
-	return ""
 }
 
-// setify parses a string and returns a tree and the number of characters it consumed from the input.
-//
-// returns -1 if entire input was consumed
-func setify(x string) (Tree, int) {
-	cons := set{}
-	start := 0
-	for i := 0; i < len(x); i++ {
-		switch x[i] {
-		case '{':
-			n, last := setify(x[i+1:])
-			if n != nil {
-				cons = append(cons, n)
-			}
-			i += last + 1
-			start = i + 1
+// To satisfy MatchStart, must match each element sucessively
+type Sequence struct {
+	arr []Matchable
+}
 
-		case '}':
-			if i > start {
-				cons = append(cons, value(x[start:i]))
-			}
-			return reduce(cons), i
-		case ' ', ',':
-			if i > start {
-				cons = append(cons, value(x[start:i]))
-			}
-			start = i + 1
+func (s *Sequence) MatchStart(text string) (int, []int) {
+	i := 0
+	for _, v := range s.arr {
+		if consumed, _ := v.MatchStart(text[i:]); consumed != -1 {
+			i += consumed
+		} else {
+			return -1, nil
 		}
 	}
-
-	if len(x) > start {
-		cons = append(cons, value(x[start:]))
-	}
-
-	return reduce(cons), -1
+	return i, nil
 }
 
-func reduce(s set) Tree {
-	switch len(s) {
-	case 0:
-		return nil
-	case 1:
-		return s[0]
+func (s *Sequence) FollowPath(path []int) string {
+	return "ERROR"
+}
+
+func (s *Sequence) String() string {
+	return fmt.Sprintf("Seq:%s", s.arr)
+}
+
+// To satisfy MatchStart, must have at least one element in set
+type Set struct {
+	arr []Matchable
+}
+
+func (s *Set) MatchStart(text string) (int, []int) {
+	for i, v := range s.arr {
+		if consumed, path := v.MatchStart(text); consumed != -1 {
+			return consumed, append(path, i)
+		}
 	}
-	return s
+	return -1, nil
+}
+
+func (s *Set) FollowPath(path []int) string {
+	lasti := len(path) - 1
+	return s.arr[path[lasti]].FollowPath(path[:lasti])
+}
+
+func (s *Set) String() string {
+	return fmt.Sprintf("Set:%s", s.arr)
+}
+
+// To satsify MatchStart, must be value
+type Value struct {
+	v string
+}
+
+func (v *Value) MatchStart(text string) (int, []int) {
+	vlen := len(v.v)
+	if len(text) >= vlen && text[:vlen] == v.v {
+		return vlen, nil
+	}
+	return -1, nil
+}
+
+func (v *Value) FollowPath(path []int) string {
+	return v.v
+}
+
+func (v *Value) String() string {
+	return "'" + v.v + "'"
 }

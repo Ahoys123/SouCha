@@ -4,12 +4,13 @@ import "fmt"
 
 type Language struct{}
 
-func NewLanguage(test string) (l *Language) {
-	r := NewRule("日ⁱ > 火 / 喪 _ 喪")
-	fmt.Println(r.Apply("喪日ⁱ喪日ⁱ喪"))
+func NewLanguage(rule, txt string) (l *Language) {
+	//r := NewRule("日ⁱ > 火 / 喪 _ 喪")
+	//fmt.Println(r.Apply("喪日ⁱ喪日ⁱ喪"))
 
-	//r1 := NewRule("dʒ > tʃ > ʃ")
-	//fmt.Println(r1.Apply("tʃeidʒ aratsa"))
+	r1 := NewRule(rule)
+	fmt.Println(r1.Apply(txt))
+
 	return &Language{}
 }
 
