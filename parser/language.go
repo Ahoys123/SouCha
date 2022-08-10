@@ -5,8 +5,6 @@ import "fmt"
 type Language struct{}
 
 func NewLanguage(rule, txt string) (l *Language) {
-	//r := NewRule("日ⁱ > 火 / 喪 _ 喪")
-	//fmt.Println(r.Apply("喪日ⁱ喪日ⁱ喪"))
 
 	r1 := NewRule(rule)
 	fmt.Println(r1.Apply(txt))
@@ -18,7 +16,14 @@ func NewLanguage(rule, txt string) (l *Language) {
 
 reserved chars:
 > / _ { } [ ] + - ( ) #
-    maybe ? * =
+    maybe ? * = !
+
+implemented:
+> / _ { } ( ) #
+
+not implemented:
+[ ] + -
+    ? * = !
 
 Base
 [X] a > b

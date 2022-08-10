@@ -18,26 +18,27 @@ func NewMatchable(txt string) (Matchable, int) {
 	for i := 0; i < len(txt); i++ {
 		switch txt[i] {
 		case '{':
-			if i > lci {
-				seq.arr = append(seq.arr, &Value{txt[lci:i]})
-			}
+			savePrev(seq, txt, i, lci)
+
 			m, last := NewMatchable(txt[i+1:])
 			seq.arr = append(seq.arr, collapse(m))
 
 			i += last
 			lci = i + 1
-		case '}':
-			if i > lci {
-				seq.arr = append(seq.arr, &Value{txt[lci:i]})
-			}
+		case '}', ')':
+			savePrev(seq, txt, i, lci)
 			if len(seq.arr) != 0 {
 				set.arr = append(set.arr, collapse(seq))
 			}
 			return set, i + 1
+		case '(':
+			savePrev(seq, txt, i, lci)
+			o, last := NewOptional(txt[i+1:])
+			seq.arr = append(seq.arr, collapse(o))
+			i += last
+			lci = i + 1
 		case ' ', ',':
-			if i > lci {
-				seq.arr = append(seq.arr, &Value{txt[lci:i]})
-			}
+			savePrev(seq, txt, i, lci)
 			if len(seq.arr) != 0 {
 				set.arr = append(set.arr, collapse(seq))
 				seq = &Sequence{}
@@ -46,15 +47,25 @@ func NewMatchable(txt string) (Matchable, int) {
 		}
 	}
 
-	if len(txt) > lci {
-		seq.arr = append(seq.arr, &Value{txt[lci:]})
-	}
+	savePrev(seq, txt, len(txt), lci)
+
 	if len(seq.arr) != 0 {
 		set.arr = append(set.arr, collapse(seq))
 		seq = &Sequence{}
 	}
 
 	return collapse(set), len(seq.arr)
+}
+
+func NewOptional(txt string) (Matchable, int) {
+	m, i := NewMatchable(txt)
+	return &Set{[]Matchable{m, &Value{""}}}, i
+}
+
+func savePrev(seq *Sequence, txt string, i, lci int) {
+	if i > lci {
+		seq.arr = append(seq.arr, &Value{txt[lci:i]})
+	}
 }
 
 func collapse(m Matchable) Matchable {
@@ -136,11 +147,48 @@ type Value struct {
 }
 
 func (v *Value) MatchStart(text string) (int, []int) {
-	vlen := len(v.v)
-	if len(text) >= vlen && text[:vlen] == v.v {
-		return vlen, nil
+	vlen, tlen := len(v.v), len(text)
+	vi := 0
+	add := 0
+
+	if v.v == "" {
+		return 0, nil
+	}
+
+	for i := 0; i < (vlen+add) && i < tlen; i++ {
+		switch v.v[vi] {
+		case '#':
+			next := waiter(text[i:], ' ')
+			if next == -1 {
+				return -1, nil
+			}
+			add += next - 1
+			i += next - 1
+
+			vi++
+		case text[i]:
+			vi++
+		default:
+			return -1, nil
+		}
+
+		if vi >= vlen {
+			return vlen + add, nil
+		}
 	}
 	return -1, nil
+}
+
+func waiter(txt string, on byte) int {
+	if txt[0] != on {
+		return -1
+	}
+	for i := range txt[1:] {
+		if txt[1+i] != on {
+			return 1 + i
+		}
+	}
+	return len(txt)
 }
 
 func (v *Value) FollowPath(path []int) string {

@@ -41,10 +41,15 @@ func (r *Rule) Apply(text string) string {
 			mlen, p = stages[cstage].MatchStart(text[i:])
 		}
 
+		//fmt.Printf("%s; %d; %d\n", text[i:], cstage, mlen)
+
 		if mlen != -1 {
+			//fmt.Printf("%s; %d; %d\n", text[i:], cstage, mlen)
 			cstage++
 
 			i += mlen
+
+			//fmt.Println(text[p1:])
 
 			switch cstage {
 			case 1:
@@ -55,7 +60,9 @@ func (r *Rule) Apply(text string) string {
 			case 3:
 				cstage = 0
 				b.WriteString(text[lastWritten:p0])
-				b.WriteString(r.to.FollowPath(path))
+				if r.to != nil {
+					b.WriteString(r.to.FollowPath(path))
+				}
 				i = p1
 				lastWritten = p1
 			}
@@ -65,8 +72,12 @@ func (r *Rule) Apply(text string) string {
 			}
 
 		} else {
+
+			// if failed on postcondition, we need to recheck the condition; else, move on to next
+			if cstage != 2 {
+				i++
+			}
 			cstage = 0
-			i++
 		}
 	}
 

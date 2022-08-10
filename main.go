@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	parser.NewLanguage("b n > a / _ i", "binib")
+	parser.NewLanguage("a(b) (b)c > d", "a bc")
 	// a{b c}d > b
 }
