@@ -9,6 +9,7 @@ type Matchable interface {
 	MatchStart(txt string) (int, []int)
 	// FollowPath returns the equivielent strucutre
 	FollowPath(path []int) string
+	// Equals returns if two
 }
 
 // NewMatchable creates a new matchable
@@ -17,10 +18,19 @@ func NewMatchable(txt string) (Matchable, int) {
 	lci := 0 // last commit index
 	for i := 0; i < len(txt); i++ {
 		switch txt[i] {
-		case '{':
+		case '{', '(', '[':
 			savePrev(seq, txt, i, lci)
 
-			m, last := NewMatchable(txt[i+1:])
+			var m Matchable
+			var last int
+			switch txt[i] {
+			case '{':
+				m, last = NewMatchable(txt[i+1:])
+			case '(':
+				m, last = NewOptional(txt[i+1:])
+			case '[':
+				m, last = NewVarSet(txt[i+1:])
+			}
 			seq.arr = append(seq.arr, collapse(m))
 
 			i += last
@@ -31,12 +41,6 @@ func NewMatchable(txt string) (Matchable, int) {
 				set.arr = append(set.arr, collapse(seq))
 			}
 			return set, i + 1
-		case '(':
-			savePrev(seq, txt, i, lci)
-			o, last := NewOptional(txt[i+1:])
-			seq.arr = append(seq.arr, collapse(o))
-			i += last
-			lci = i + 1
 		case ' ', ',':
 			savePrev(seq, txt, i, lci)
 			if len(seq.arr) != 0 {
