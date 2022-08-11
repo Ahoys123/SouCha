@@ -6,17 +6,22 @@ import (
 )
 
 type Rule struct {
+	ctx               RuleContext
 	from, to          Matchable
 	env               string
 	precond, postcond Matchable
 }
 
-func NewRule(rule string) *Rule {
+func (l *Language) NewRule(rule string) *Rule {
 	r := &Rule{}
+
+	r.ctx = l.ctx
 
 	r.split(rule)
 
 	r.parseEnv()
+
+	fmt.Println(r.from)
 
 	return r
 }
@@ -93,7 +98,7 @@ func (r *Rule) split(rule string) {
 		switch rule[i] {
 		case '>':
 			if r.from == nil {
-				r.from, _ = NewMatchable(strings.TrimSpace(rule[pointer:i]))
+				r.from, _ = r.ctx.NewMatchable(strings.TrimSpace(rule[pointer:i]))
 			}
 			pointer = i + 1
 		case '/':
@@ -109,7 +114,7 @@ func (r *Rule) split(rule string) {
 		r.env = strings.TrimSpace(rule[pointer:])
 	}
 
-	r.to, _ = NewMatchable(strings.TrimSpace(sto))
+	r.to, _ = r.ctx.NewMatchable(strings.TrimSpace(sto))
 }
 
 func (r *Rule) parseEnv() error {
@@ -117,8 +122,8 @@ func (r *Rule) parseEnv() error {
 	if len(split) != 2 {
 		return fmt.Errorf("enviornment \"%s\" not in format \"{precondition} _ {postcondition}\"", r.env)
 	}
-	r.precond, _ = NewMatchable(strings.TrimSpace(split[0]))
-	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]))
+	r.precond, _ = r.ctx.NewMatchable(strings.TrimSpace(split[0]))
+	r.postcond, _ = r.ctx.NewMatchable(strings.TrimSpace(split[1]))
 	return nil
 }
 

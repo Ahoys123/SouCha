@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Matchable interface {
@@ -13,7 +14,7 @@ type Matchable interface {
 }
 
 // NewMatchable creates a new matchable
-func NewMatchable(txt string) (Matchable, int) {
+func (ctx RuleContext) NewMatchable(txt string) (Matchable, int) {
 	set, seq := &Set{}, &Sequence{}
 	lci := 0 // last commit index
 	for i := 0; i < len(txt); i++ {
@@ -25,11 +26,12 @@ func NewMatchable(txt string) (Matchable, int) {
 			var last int
 			switch txt[i] {
 			case '{':
-				m, last = NewMatchable(txt[i+1:])
+				m, last = ctx.NewMatchable(txt[i+1:])
 			case '(':
-				m, last = NewOptional(txt[i+1:])
+				m, last = ctx.NewOptional(txt[i+1:])
 			case '[':
-				m, last = NewVarSet(txt[i+1:])
+				last = strings.IndexByte(txt[i+1:], ']') + 1
+				m = MapSetToSet(ctx.NewVarSet(txt[i+1 : last]))
 			}
 			seq.arr = append(seq.arr, collapse(m))
 
@@ -61,14 +63,14 @@ func NewMatchable(txt string) (Matchable, int) {
 	return collapse(set), len(seq.arr)
 }
 
-func NewOptional(txt string) (Matchable, int) {
-	m, i := NewMatchable(txt)
-	return &Set{[]Matchable{m, &Value{""}}}, i
+func (ctx RuleContext) NewOptional(txt string) (Matchable, int) {
+	m, i := ctx.NewMatchable(txt)
+	return &Set{[]Matchable{m, Value("")}}, i
 }
 
 func savePrev(seq *Sequence, txt string, i, lci int) {
 	if i > lci {
-		seq.arr = append(seq.arr, &Value{txt[lci:i]})
+		seq.arr = append(seq.arr, Value(txt[lci:i]))
 	}
 }
 
@@ -146,21 +148,19 @@ func (s *Set) String() string {
 }
 
 // To satsify MatchStart, must be value
-type Value struct {
-	v string
-}
+type Value string
 
-func (v *Value) MatchStart(text string) (int, []int) {
-	vlen, tlen := len(v.v), len(text)
+func (v Value) MatchStart(text string) (int, []int) {
+	vlen, tlen := len(v), len(text)
 	vi := 0
 	add := 0
 
-	if v.v == "" {
+	if v == "" {
 		return 0, nil
 	}
 
 	for i := 0; i < (vlen+add) && i < tlen; i++ {
-		switch v.v[vi] {
+		switch v[vi] {
 		case '#':
 			next := waiter(text[i:], ' ')
 			if next == -1 {
@@ -195,10 +195,10 @@ func waiter(txt string, on byte) int {
 	return len(txt)
 }
 
-func (v *Value) FollowPath(path []int) string {
-	return v.v
+func (v Value) FollowPath(path []int) string {
+	return string(v)
 }
 
-func (v *Value) String() string {
-	return "'" + v.v + "'"
+func (v Value) String() string {
+	return "'" + string(v) + "'"
 }

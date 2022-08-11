@@ -2,14 +2,30 @@ package parser
 
 import "fmt"
 
-type Language struct{}
+type Language struct {
+	ctx RuleContext
+}
 
 func NewLanguage(rule, txt string) (l *Language) {
 
-	r1 := NewRule(rule)
+	l = &Language{}
+
+	//fmt.Println(MapSet{"p": struct{}{}}.Intersection(MapSet{"p": struct{}{}}))
+
+	l.ctx = RuleContext{
+		map[string]MapSet{
+			"stop":      {"p": {}, "t": {}, "k": {}},
+			"labial":    {"p": {}, "m": {}},
+			"universal": {"p": {}, "t": {}, "k": {}, "b": {}, "d": {}, "m": {}},
+		},
+		MapSet{"p": {}, "t": {}, "k": {}, "b": {}, "d": {}},
+	}
+
+	r1 := l.NewRule(rule)
+
 	fmt.Println(r1.Apply(txt))
 
-	return &Language{}
+	return l
 }
 
 /*
