@@ -18,10 +18,10 @@ func (ms MapSet) Evaluate() MapSet {
 
 func (ms0 MapSet) Union(ms1 MapSet) MapSet {
 	trms := make(MapSet)
-	for k, _ := range ms0 {
+	for k := range ms0 {
 		trms[k] = struct{}{}
 	}
-	for k, _ := range ms1 {
+	for k := range ms1 {
 		trms[k] = struct{}{}
 	}
 	return trms
@@ -29,7 +29,7 @@ func (ms0 MapSet) Union(ms1 MapSet) MapSet {
 
 func (ms0 MapSet) Difference(ms1 MapSet) MapSet {
 	trms := make(MapSet)
-	for k, _ := range ms0 {
+	for k := range ms0 {
 		if _, in := ms1[k]; !in {
 			trms[k] = struct{}{}
 		}
@@ -39,7 +39,7 @@ func (ms0 MapSet) Difference(ms1 MapSet) MapSet {
 
 func (ms0 MapSet) Intersection(ms1 MapSet) MapSet {
 	trms := make(MapSet)
-	for k, _ := range ms0 {
+	for k := range ms0 {
 		if _, in := ms1[k]; in {
 			trms[k] = struct{}{}
 		}
