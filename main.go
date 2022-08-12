@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	parser.NewLanguage("[ universal ! (stop | labial) ] > m", "pbtdkg")
+	parser.NewLanguage("[ labial ! stop ]n > m", "pbtdkg")
 	// a{b c}d > b
 
 }

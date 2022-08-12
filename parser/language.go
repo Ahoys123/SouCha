@@ -16,7 +16,7 @@ func NewLanguage(rule, txt string) (l *Language) {
 		map[string]MapSet{
 			"stop":      {"p": {}, "t": {}, "k": {}},
 			"labial":    {"p": {}, "m": {}},
-			"universal": {"p": {}, "t": {}, "k": {}, "b": {}, "d": {}, "m": {}},
+			"universal": {"p": {}, "t": {}, "k": {}, "m": {}},
 		},
 		MapSet{"p": {}, "t": {}, "k": {}, "b": {}, "d": {}},
 	}

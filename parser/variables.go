@@ -119,6 +119,9 @@ func NewMapSet(txt string) (MapSet, int) {
 
 			lci = i + 1
 		case '}':
+			if i > lci {
+				trms[Value(txt[lci:i])] = struct{}{}
+			}
 			return trms, i + 1
 		}
 	}
