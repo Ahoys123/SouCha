@@ -47,7 +47,7 @@ func (ms0 MapSet) Intersection(ms1 MapSet) MapSet {
 	return trms
 }
 
-func (ctx RuleContext) NewVarSet(txt string) MapSet {
+func NewVarSet(txt string, ctx *RuleContext) MapSet {
 	var left MapSet
 	lci := 0
 	tlen := len(txt)
@@ -70,23 +70,23 @@ func (ctx RuleContext) NewVarSet(txt string) MapSet {
 					left = nil
 					continue
 				}
-				return left.Intersection(ctx.NewVarSet(txt[i+1:])) // left + right
+				return left.Intersection(NewVarSet(txt[i+1:], ctx)) // left + right
 			case '|':
 				if len(left) == 0 {
 					left = nil
 					continue
 				}
-				return left.Union(ctx.NewVarSet(txt[i+1:])) // left U right
+				return left.Union(NewVarSet(txt[i+1:], ctx)) // left U right
 			case '!', '-':
 				if len(left) == 0 {
-					return ctx.Universal.Difference(ctx.NewVarSet(txt[i+1:]))
+					return ctx.Universal.Difference(NewVarSet(txt[i+1:], ctx))
 				}
-				return left.Difference(ctx.NewVarSet(txt[i+1:]))
+				return left.Difference(NewVarSet(txt[i+1:], ctx))
 			}
 			fmt.Printf("ERROR, unknown operator %s\n", txt[i:i+1])
 			return left
 		case '(':
-			left = ctx.NewVarSet(txt[i+1:])
+			left = NewVarSet(txt[i+1:], ctx)
 		case ')':
 			tlen = i
 		}

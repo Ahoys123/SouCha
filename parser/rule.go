@@ -6,7 +6,7 @@ import (
 )
 
 type Rule struct {
-	ctx               RuleContext
+	ctx               *RuleContext
 	from, to          Matchable
 	env               string
 	precond, postcond Matchable
@@ -98,7 +98,7 @@ func (r *Rule) split(rule string) {
 		switch rule[i] {
 		case '>':
 			if r.from == nil {
-				r.from, _ = r.ctx.NewMatchable(strings.TrimSpace(rule[pointer:i]))
+				r.from, _ = NewMatchable(strings.TrimSpace(rule[pointer:i]), r.ctx)
 			}
 			pointer = i + 1
 		case '/':
@@ -114,7 +114,7 @@ func (r *Rule) split(rule string) {
 		r.env = strings.TrimSpace(rule[pointer:])
 	}
 
-	r.to, _ = r.ctx.NewMatchable(strings.TrimSpace(sto))
+	r.to, _ = NewMatchable(strings.TrimSpace(sto), r.ctx)
 }
 
 func (r *Rule) parseEnv() error {
@@ -122,8 +122,8 @@ func (r *Rule) parseEnv() error {
 	if len(split) != 2 {
 		return fmt.Errorf("enviornment \"%s\" not in format \"{precondition} _ {postcondition}\"", r.env)
 	}
-	r.precond, _ = r.ctx.NewMatchable(strings.TrimSpace(split[0]))
-	r.postcond, _ = r.ctx.NewMatchable(strings.TrimSpace(split[1]))
+	r.precond, _ = NewMatchable(strings.TrimSpace(split[0]), r.ctx)
+	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]), r.ctx)
 	return nil
 }
 

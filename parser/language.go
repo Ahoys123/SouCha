@@ -3,7 +3,7 @@ package parser
 import "fmt"
 
 type Language struct {
-	ctx RuleContext
+	ctx *RuleContext
 }
 
 func NewLanguage(rule, txt string) (l *Language) {
@@ -12,7 +12,7 @@ func NewLanguage(rule, txt string) (l *Language) {
 
 	//fmt.Println(MapSet{"p": struct{}{}}.Intersection(MapSet{"p": struct{}{}}))
 
-	l.ctx = RuleContext{
+	l.ctx = &RuleContext{
 		map[string]MapSet{
 			"stop":      {"p": {}, "t": {}, "k": {}},
 			"labial":    {"p": {}, "m": {}},

@@ -14,7 +14,7 @@ type Matchable interface {
 }
 
 // NewMatchable creates a new matchable
-func (ctx RuleContext) NewMatchable(txt string) (Matchable, int) {
+func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 	set, seq := &Set{}, &Sequence{}
 	lci := 0 // last commit index
 	for i := 0; i < len(txt); i++ {
@@ -26,12 +26,12 @@ func (ctx RuleContext) NewMatchable(txt string) (Matchable, int) {
 			var last int
 			switch txt[i] {
 			case '{':
-				m, last = ctx.NewMatchable(txt[i+1:])
+				m, last = NewMatchable(txt[i+1:], ctx)
 			case '(':
-				m, last = ctx.NewOptional(txt[i+1:])
+				m, last = NewOptional(txt[i+1:], ctx)
 			case '[':
 				last = strings.IndexByte(txt[i+1:], ']') + 1
-				m = MapSetToSet(ctx.NewVarSet(txt[i+1 : last]))
+				m = MapSetToSet(NewVarSet(txt[i+1:last], ctx))
 			}
 			seq.arr = append(seq.arr, collapse(m))
 
@@ -63,8 +63,8 @@ func (ctx RuleContext) NewMatchable(txt string) (Matchable, int) {
 	return collapse(set), len(seq.arr)
 }
 
-func (ctx RuleContext) NewOptional(txt string) (Matchable, int) {
-	m, i := ctx.NewMatchable(txt)
+func NewOptional(txt string, ctx *RuleContext) (Matchable, int) {
+	m, i := NewMatchable(txt, ctx)
 	return &Set{[]Matchable{m, Value("")}}, i
 }
 
