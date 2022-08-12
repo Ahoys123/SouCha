@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"strings"
 )
 
 type RuleContext struct {
@@ -49,55 +48,75 @@ func (ms0 MapSet) Intersection(ms1 MapSet) MapSet {
 
 func NewVarSet(txt string, ctx *RuleContext) MapSet {
 	var left MapSet
-	lci := 0
-	tlen := len(txt)
-
-	for i := 0; i < tlen; i++ {
+	var right string
+	var oper uint8
+	lwi := 0 // last written index
+	for i := 0; i < len(txt); i++ {
 		switch txt[i] {
-		case '{':
-			l, consumed := NewMapSet(txt[i+1:])
-			left = l
-			i += consumed - 1
-		case '!', '&', '|', '+', '-':
-			if left == nil {
-				left = ctx.Features[strings.TrimSpace(txt[lci:i])]
+		case '+', '&':
+			left = operationSwitch(txt, oper, i, lwi, left, right, ctx, ctx.Universal)
+			oper = intersection
+			lwi = i + 1
+		case '-', '!':
+			left = operationSwitch(txt, oper, i, lwi, left, right, ctx, ctx.Universal)
+			oper = difference
+			lwi = i + 1
+		case '|':
+			left = operationSwitch(txt, oper, i, lwi, left, right, ctx, MapSet{})
+			oper = union
+			lwi = i + 1
+		case ' ':
+			if i > lwi {
+				right = txt[lwi:i]
 			}
-
-			fmt.Println(txt[lci:i], txt[i+1:])
-			switch txt[i] {
-			case '&', '+':
-				if len(left) == 0 {
-					left = nil
-					continue
-				}
-				return left.Intersection(NewVarSet(txt[i+1:], ctx)) // left + right
-			case '|':
-				if len(left) == 0 {
-					left = nil
-					continue
-				}
-				return left.Union(NewVarSet(txt[i+1:], ctx)) // left U right
-			case '!', '-':
-				if len(left) == 0 {
-					return ctx.Universal.Difference(NewVarSet(txt[i+1:], ctx))
-				}
-				return left.Difference(NewVarSet(txt[i+1:], ctx))
-			}
-			fmt.Printf("ERROR, unknown operator %s\n", txt[i:i+1])
-			return left
-		case '(':
-			left = NewVarSet(txt[i+1:], ctx)
-		case ')':
-			tlen = i
+			lwi = i + 1
 		}
 	}
 
-	if left == nil && tlen > lci {
-		left = ctx.Features[strings.TrimSpace(txt[lci:tlen])]
+	if len(txt) > lwi {
+		right = txt[lwi:]
 	}
+
+	left = operationSwitch(txt, oper, len(txt), lwi, left, right, ctx, MapSet{})
 
 	return left
 }
+
+func operationSwitch(txt string, oper uint8, i, lwi int, left MapSet, right string, ctx *RuleContext, ielwi MapSet) MapSet {
+	if right == "" {
+		return ielwi
+	}
+
+	if i > lwi {
+		right = txt[lwi:i]
+	}
+
+	fmt.Println(right)
+
+	set := ctx.Features[right]
+
+	if left == nil {
+		return set
+	}
+
+	switch oper {
+	case union:
+		return left.Union(set)
+	case difference:
+		return left.Difference(set)
+	case intersection:
+		return left.Intersection(set)
+	}
+
+	return left
+
+}
+
+const (
+	union uint8 = iota
+	difference
+	intersection
+)
 
 func MapSetToSet(ms MapSet) *Set {
 	s := &Set{[]Matchable{}}

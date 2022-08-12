@@ -14,11 +14,10 @@ func NewLanguage(rule, txt string) (l *Language) {
 
 	l.ctx = &RuleContext{
 		map[string]MapSet{
-			"stop":      {"p": {}, "t": {}, "k": {}},
-			"labial":    {"p": {}, "m": {}},
-			"universal": {"p": {}, "t": {}, "k": {}, "m": {}},
+			"stop":   {"p": {}, "t": {}, "k": {}},
+			"labial": {"p": {}, "m": {}},
 		},
-		MapSet{"p": {}, "t": {}, "k": {}, "b": {}, "d": {}},
+		MapSet{"p": {}, "t": {}, "k": {}, "m": {}},
 	}
 
 	r1 := l.NewRule(rule)
