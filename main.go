@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	parser.NewLanguage("[&labial]n > m", "pbtdkg")
+	parser.NewLanguage("[-(stop+labial)]n > m", "pbtdkg")
 	// a{b c}d > b
 
 }

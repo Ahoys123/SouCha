@@ -31,7 +31,8 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 				m, last = NewOptional(txt[i+1:], ctx)
 			case '[':
 				last = strings.IndexByte(txt[i+1:], ']') + 1
-				m = MapSetToSet(NewVarSet(txt[i+1:last], ctx))
+				vs, _ := NewVarSet(txt[i+1:last], ctx)
+				m = MapSetToSet(vs)
 			}
 			seq.arr = append(seq.arr, collapse(m))
 
