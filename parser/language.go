@@ -1,31 +1,48 @@
 package parser
 
-import "fmt"
+import (
+	"strings"
+)
 
 type Language struct {
-	ctx *RuleContext
+	rules []*Rule
+	ctx   *RuleContext
 }
 
-func NewLanguage(rule, txt string) (l *Language) {
+func NewLanguage(context string, rules string) (l *Language) {
 
 	l = &Language{}
 
-	//fmt.Println(MapSet{"p": struct{}{}}.Intersection(MapSet{"p": struct{}{}}))
+	features := map[string]ValueSet{}
 
-	l.ctx = &RuleContext{
-		map[string]ValueSet{
-			"stop":      {"p": {}, "t": {}, "k": {}},
-			"labial":    {"p": {}, "m": {}},
-			"universal": {"p": {}, "t": {}, "k": {}, "m": {}, "b": {}},
-		},
-		ValueSet{"p": {}, "t": {}, "k": {}, "m": {}, "b": {}},
+	for _, line := range strings.Split(context, "\n") {
+		v := strings.SplitN(line, "=", 2)
+		vs, _ := NewValueSet(v[1])
+		features[strings.TrimSpace(v[0])] = vs
 	}
 
-	r1 := l.NewRule(rule)
+	vs := ValueSet{}
+	for _, v := range features {
+		vs = vs.Union(v)
+	}
 
-	fmt.Println(r1.Apply(txt))
+	l.ctx = &RuleContext{
+		features,
+		vs,
+	}
+
+	for _, v := range strings.Split(rules, "\n") {
+		l.rules = append(l.rules, l.NewRule(v))
+	}
 
 	return l
+}
+
+func (l *Language) Apply(txt string) string {
+	for _, rule := range l.rules {
+		txt = rule.Apply(txt)
+	}
+	return txt
 }
 
 /*
