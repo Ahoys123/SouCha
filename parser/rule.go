@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// Rule is a struct representing a phonological sound change rule.
+// It has an Apply method, which applies the sound change to a given text sample.
 type Rule struct {
 	ctx               *RuleContext
 	from, to          Matchable
@@ -12,21 +14,21 @@ type Rule struct {
 	precond, postcond Matchable
 }
 
+// NewRule creates a new rule from a language by parsing the user supplied rule in string form.
 func (l *Language) NewRule(rule string) *Rule {
 	r := &Rule{}
-
 	r.ctx = l.ctx
 
-	r.split(rule)
+	r.split(rule) // split the rule into parts; from > to / env
 
-	r.parseEnv()
-
-	fmt.Println(r.from)
+	r.parseEnv() // split env into parths; precond _ poscond
 
 	return r
 }
 
+// Apply applies a rule to a string.
 func (r *Rule) Apply(text string) string {
+	text = " " + text + " "
 	b := strings.Builder{}
 
 	stages := [3]Matchable{r.precond, r.from, r.postcond}
@@ -91,6 +93,7 @@ func (r *Rule) Apply(text string) string {
 	return b.String()
 }
 
+// split splits a string rule into parts from, to, and env
 func (r *Rule) split(rule string) {
 	pointer := 0
 	var sto string
@@ -117,6 +120,7 @@ func (r *Rule) split(rule string) {
 	r.to, _ = NewMatchable(strings.TrimSpace(sto), r.ctx)
 }
 
+// parseEnv splits a string env into a precondition and postcondition
 func (r *Rule) parseEnv() error {
 	split := strings.SplitN(r.env, "_", 2)
 	if len(split) != 2 {
@@ -126,6 +130,3 @@ func (r *Rule) parseEnv() error {
 	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]), r.ctx)
 	return nil
 }
-
-// [+stop+consonant+alveolar] > r / [+vowel+stress] _ [+vowel-stress]
-// t d > r / [+vowel+stress] _ [+vowel-stress]

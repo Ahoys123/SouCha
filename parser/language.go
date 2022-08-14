@@ -13,12 +13,12 @@ func NewLanguage(rule, txt string) (l *Language) {
 	//fmt.Println(MapSet{"p": struct{}{}}.Intersection(MapSet{"p": struct{}{}}))
 
 	l.ctx = &RuleContext{
-		map[string]MapSet{
+		map[string]ValueSet{
 			"stop":      {"p": {}, "t": {}, "k": {}},
 			"labial":    {"p": {}, "m": {}},
 			"universal": {"p": {}, "t": {}, "k": {}, "m": {}, "b": {}},
 		},
-		MapSet{"p": {}, "t": {}, "k": {}, "m": {}, "b": {}},
+		ValueSet{"p": {}, "t": {}, "k": {}, "m": {}, "b": {}},
 	}
 
 	r1 := l.NewRule(rule)
@@ -35,10 +35,9 @@ reserved chars:
     maybe ? * = !
 
 implemented:
-> / _ { } ( ) #
+> / _ { } ( ) # [ ] + -
 
 not implemented:
-[ ] + -
     ? * = !
 
 Base
@@ -56,17 +55,17 @@ Basic unnamed sets
 [X] {a {b c} d} e > {f g h} i
 
 Basic named sets
-[ ] [a] > b
-[ ] [a] > [b]
+[X] [a] > b
+[?] [a] > [b]
     // provided len(a) == len(b)
 
 Arithmitic with named sets intrasectionally
-[ ] [a+b] > c
-[ ] [a+b+c] > d
-[ ] [a-b] > c
-[ ] [a+b-c] > d
-[ ] [a-b-c] > d
-[ ] [a-(b-c)] > d
+[X] [a+b] > c
+[X] [a+b+c] > d
+[X] [a-b] > c
+[X] [a+b-c] > d
+[X] [a-b-c] > d
+[X] [a-(b-c)] > d
 
 Arithmitic with named sets intersectionally (see Implementation)
 [ ] [a] > *[-a]

@@ -10,15 +10,15 @@ type Matchable interface {
 	MatchStart(txt string) (int, []int)
 	// FollowPath returns the equivielent strucutre
 	FollowPath(path []int) string
-	// Equals returns if two
 }
 
-// NewMatchable creates a new matchable
+// NewMatchable creates a new matchable from the string.
 func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 	set, seq := &Set{}, &Sequence{}
 	lci := 0 // last commit index
 	for i := 0; i < len(txt); i++ {
 		switch txt[i] {
+		// if opening bracket, hand off to respective handlers and then continue from after they left off
 		case '{', '(', '[':
 			savePrev(seq, txt, i, lci)
 
@@ -32,18 +32,20 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 			case '[':
 				last = strings.IndexByte(txt[i+1:], ']') + 1
 				vs, _ := NewVarSet(txt[i+1:last], ctx)
-				m = MapSetToSet(vs)
+				m = ValueSetToSet(vs)
 			}
 			seq.arr = append(seq.arr, collapse(m))
 
 			i += last
 			lci = i + 1
+		// if closing bracket, return info between start (presumably start of brackets) and end of brackets
 		case '}', ')':
 			savePrev(seq, txt, i, lci)
 			if len(seq.arr) != 0 {
 				set.arr = append(set.arr, collapse(seq))
 			}
 			return set, i + 1
+		// if space, save the previous sequence into the return set, then continue with the next sequence
 		case ' ', ',':
 			savePrev(seq, txt, i, lci)
 			if len(seq.arr) != 0 {
@@ -64,17 +66,20 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 	return collapse(set), len(seq.arr)
 }
 
+// NewOptional allows a string of "" to match, along with any others.
 func NewOptional(txt string, ctx *RuleContext) (Matchable, int) {
 	m, i := NewMatchable(txt, ctx)
 	return &Set{[]Matchable{m, Value("")}}, i
 }
 
+// savePrev saves the previous value up to that point into seq if that text is not whitespace or empty.
 func savePrev(seq *Sequence, txt string, i, lci int) {
 	if i > lci {
 		seq.arr = append(seq.arr, Value(txt[lci:i]))
 	}
 }
 
+// collapse turns matchables into reduced forms, with sets or sequences with only one value collapsed to that value.
 func collapse(m Matchable) Matchable {
 	switch e := m.(type) {
 	case *Sequence:
@@ -100,7 +105,7 @@ func collapse(m Matchable) Matchable {
 	}
 }
 
-// To satisfy MatchStart, must match each element sucessively
+// Sequence satisfies MatchStart when each Matchable in it's array matches, in order, the begining of the text.
 type Sequence struct {
 	arr []Matchable
 }
@@ -125,7 +130,7 @@ func (s *Sequence) String() string {
 	return fmt.Sprintf("Seq:%s", s.arr)
 }
 
-// To satisfy MatchStart, must have at least one element in set
+// Set satisfies MatchStart when any Matchable in it's array matches the begining of the text.
 type Set struct {
 	arr []Matchable
 }
@@ -148,7 +153,7 @@ func (s *Set) String() string {
 	return fmt.Sprintf("Set:%s", s.arr)
 }
 
-// To satsify MatchStart, must be value
+// Value satisfies MatchStart when it matches the begining of the text.
 type Value string
 
 func (v Value) MatchStart(text string) (int, []int) {
@@ -184,6 +189,8 @@ func (v Value) MatchStart(text string) (int, []int) {
 	return -1, nil
 }
 
+// waiter stalls on a character for however long, returning -1 if the stalled character doesn't exist.
+// Otherwise, it returns how many characters it stalled on.
 func waiter(txt string, on byte) int {
 	if txt[0] != on {
 		return -1

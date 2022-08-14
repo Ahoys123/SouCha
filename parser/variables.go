@@ -5,14 +5,17 @@ import (
 )
 
 type RuleContext struct {
-	Features  map[string]MapSet
-	Universal MapSet
+	Features  map[string]ValueSet
+	Universal ValueSet
 }
 
-type MapSet map[Value]struct{}
+// ValueSet is a special type of Set which only accepts Values as elements.
+type ValueSet map[Value]struct{}
 
-func (ms0 MapSet) Union(ms1 MapSet) MapSet {
-	trms := make(MapSet)
+// Union returns a newly allocated map based on the union of both sets.
+// The returned set will return values that exist in EITHER set.
+func (ms0 ValueSet) Union(ms1 ValueSet) ValueSet {
+	trms := make(ValueSet)
 	for k := range ms0 {
 		trms[k] = struct{}{}
 	}
@@ -22,8 +25,10 @@ func (ms0 MapSet) Union(ms1 MapSet) MapSet {
 	return trms
 }
 
-func (ms0 MapSet) Difference(ms1 MapSet) MapSet {
-	trms := make(MapSet)
+// Difference returns a newly allocated map based on the difference of both sets.
+// The returned set will return values that exist in the first set, but NOT the second one.
+func (ms0 ValueSet) Difference(ms1 ValueSet) ValueSet {
+	trms := make(ValueSet)
 	for k := range ms0 {
 		if _, in := ms1[k]; !in {
 			trms[k] = struct{}{}
@@ -32,8 +37,10 @@ func (ms0 MapSet) Difference(ms1 MapSet) MapSet {
 	return trms
 }
 
-func (ms0 MapSet) Intersection(ms1 MapSet) MapSet {
-	trms := make(MapSet)
+// Intersection returns a newly allocated map based on the intersection of both sets.
+// The returned set will return values that exist in BOTH sets.
+func (ms0 ValueSet) Intersection(ms1 ValueSet) ValueSet {
+	trms := make(ValueSet)
 	for k := range ms0 {
 		if _, in := ms1[k]; in {
 			trms[k] = struct{}{}
@@ -42,11 +49,11 @@ func (ms0 MapSet) Intersection(ms1 MapSet) MapSet {
 	return trms
 }
 
-// TODO: add user errors
-// TODO: add __to__ support
-func NewVarSet(txt string, ctx *RuleContext) (MapSet, int) {
+// NewVarSet creates a ValueSet based on the user defined sets defined in ctx.
+// It supports operations like the Union, Difference, and Intersection of user defined sets.
+func NewVarSet(txt string, ctx *RuleContext) (ValueSet, int) {
 	fmt.Println(txt)
-	var left, right MapSet
+	var left, right ValueSet
 	var oper uint8
 	tlen := len(txt)
 
@@ -73,7 +80,7 @@ func NewVarSet(txt string, ctx *RuleContext) (MapSet, int) {
 			right = saveRight(txt, i, lwi, right, ctx)
 			lwi = i + 1
 		case '{':
-			ms, consumed := NewMapSet(txt[i+1:])
+			ms, consumed := NewValueSet(txt[i+1:])
 			right = ms
 			i += consumed - 1
 		case '(':
@@ -90,7 +97,9 @@ func NewVarSet(txt string, ctx *RuleContext) (MapSet, int) {
 	return left, tlen
 }
 
-func saveRight(txt string, i, lwi int, right MapSet, ctx *RuleContext) MapSet {
+// saveRight returns the values to the right of i if "worth saving", otherwise it returns the previous right value.
+// Values are "worth saving" if they exist as a user defined set and are not whitespace.
+func saveRight(txt string, i, lwi int, right ValueSet, ctx *RuleContext) ValueSet {
 	if i > lwi {
 		ms, ok := ctx.Features[txt[lwi:i]]
 		if ok {
@@ -100,7 +109,9 @@ func saveRight(txt string, i, lwi int, right MapSet, ctx *RuleContext) MapSet {
 	return right
 }
 
-func operationSwitch(txt string, oper uint8, i, lwi int, left MapSet, right MapSet, ctx *RuleContext) MapSet {
+// operationSwitch consolodates left and right into one set through the operation defined by oper.
+// It returns what the new left should be, as well as making right safe to clear.
+func operationSwitch(txt string, oper uint8, i, lwi int, left ValueSet, right ValueSet, ctx *RuleContext) ValueSet {
 	right = saveRight(txt, i, lwi, right, ctx)
 
 	fmt.Printf("\t%s, %s, %d\n", left, right, oper)
@@ -113,7 +124,7 @@ func operationSwitch(txt string, oper uint8, i, lwi int, left MapSet, right MapS
 			case difference:
 				return ctx.Universal
 			case intersection:
-				return MapSet{}
+				return ValueSet{}
 			}
 		}
 		return right
@@ -135,13 +146,15 @@ func operationSwitch(txt string, oper uint8, i, lwi int, left MapSet, right MapS
 	return left
 }
 
+// Constant for operations on ValueSets
 const (
 	union uint8 = iota
 	difference
 	intersection
 )
 
-func MapSetToSet(ms MapSet) *Set {
+// ValueSetToSet converts a ValueSet to a *Set for use in Matchables.
+func ValueSetToSet(ms ValueSet) *Set {
 	s := &Set{[]Matchable{}}
 	for k := range ms {
 		s.arr = append(s.arr, k)
@@ -149,8 +162,10 @@ func MapSetToSet(ms MapSet) *Set {
 	return s
 }
 
-func NewMapSet(txt string) (MapSet, int) {
-	trms := make(MapSet)
+// NewValueSet creates a ValueSet out of PURE values, no variables (use NewVarSet for that).
+// All comma/space seperated strings will be counted literally.
+func NewValueSet(txt string) (ValueSet, int) {
+	trms := make(ValueSet)
 	lci := 0
 	for i := 0; i < len(txt); i++ {
 		switch txt[i] {
