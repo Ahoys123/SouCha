@@ -1,9 +1,5 @@
 package parser
 
-import (
-	"fmt"
-)
-
 type RuleContext struct {
 	Features  map[string]ValueSet
 	Universal ValueSet
@@ -52,7 +48,7 @@ func (ms0 ValueSet) Intersection(ms1 ValueSet) ValueSet {
 // NewVarSet creates a ValueSet based on the user defined sets defined in ctx.
 // It supports operations like the Union, Difference, and Intersection of user defined sets.
 func NewVarSet(txt string, ctx *RuleContext) (ValueSet, int) {
-	fmt.Println(txt)
+	//fmt.Println(txt)
 	var left, right ValueSet
 	var oper uint8
 	tlen := len(txt)
@@ -67,7 +63,7 @@ func NewVarSet(txt string, ctx *RuleContext) (ValueSet, int) {
 			lwi = i + 1
 		case '-', '!':
 			left = operationSwitch(txt, oper, i, lwi, left, right, ctx)
-			fmt.Println(left)
+			//fmt.Println(left)
 			right = nil
 			oper = difference
 			lwi = i + 1
@@ -114,7 +110,7 @@ func saveRight(txt string, i, lwi int, right ValueSet, ctx *RuleContext) ValueSe
 func operationSwitch(txt string, oper uint8, i, lwi int, left ValueSet, right ValueSet, ctx *RuleContext) ValueSet {
 	right = saveRight(txt, i, lwi, right, ctx)
 
-	fmt.Printf("\t%s, %s, %d\n", left, right, oper)
+	//fmt.Printf("\t%s, %s, %d\n", left, right, oper)
 
 	if left == nil {
 		if right == nil {
@@ -182,6 +178,8 @@ func NewValueSet(txt string) (ValueSet, int) {
 			return trms, i + 1
 		}
 	}
-	fmt.Println("uh, no closing }")
+	if len(txt) > lci {
+		trms[Value(txt[lci:])] = struct{}{}
+	}
 	return trms, len(txt)
 }

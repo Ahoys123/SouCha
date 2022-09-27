@@ -28,7 +28,6 @@ func (l *Language) NewRule(rule string) *Rule {
 
 // Apply applies a rule to a string.
 func (r *Rule) Apply(text string) string {
-	text = " " + text + " "
 	b := strings.Builder{}
 
 	stages := [3]Matchable{r.precond, r.from, r.postcond}

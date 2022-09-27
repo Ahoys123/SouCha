@@ -1,0 +1,64 @@
+consonant = m v ɥ θ n t d s z l ʒ ʎ j k g x h β ð ɣ
+labial = m v ɥ β
+dental = θ ð
+alveolar = n t d s z l 
+palveolar = ʒ
+palatal = ʎ j ɥ
+velar = k g x ɣ
+glottal = h
+nasal = m n
+plosive = t d k g
+fricative = v θ s z ʒ x h β ð ɣ
+lateral = l ʎ
+approximant = j ɥ
+voice = m v ɥ n d z l ʒ ʎ j g β ð ɣ
+
+vowel = a i u e o y
+close = i y u
+close_mid = e o
+low = a
+front = i y e a
+back = u o
+
+// DEROMANIZER
+th zh lh y kh ï ü > θ ʒ ʎ ɥ x j y
+â î û > aː iː uː
+
+h > 
+
+ɥ ʎ > j / _[+front]
+ɥ >
+
+{i u} > {e o} / _ [!{ː}] [+consonant]
+
+y > i / [+alveolar|+palatal] _
+y > u
+
+// change long vowels to be %V for easy workaround; to be fixed soon
+aː iː uː > %a %i %u
+% > a
+%a %i %u > aː iː uː
+
+ji wu > iː uː
+
+[+vowel] > ː / [+vowel] _
+
+{v z ʒ} > {f s ʃ}
+
+ː > / [+consonant] _
+
+[+vowel] > / [+plosive|fricative] _ [+plosive|fricative]
+[+vowel] > / _ [+vowel]
+
+[+nasal][+plosive] > TBD
+
+r > ɾ
+
+l > ɾ / [+vowel] _ [+vowel]
+
+{b d g} > {β ð ɣ}
+
+// ROMANIZER
+
+θ ʒ ʎ ɥ x j y > th zh lh y kh ï ü 
+aː iː uː > â î û

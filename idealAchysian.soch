@@ -1,0 +1,17 @@
+h > ∅
+ɥ ʎ > j / _[+vowel+front]
+ɥ ʎ > ∅ l
+[@V+vowel-long] > [@V+low] / _$
+y ø > i e / [+alveolar|+palatal] _
+y ø > u o
+[@V+vowel+long] > a[@V]
+ji > i:
+wu > u:
+[@V1+vowel][@V2+vowel] > [@V1+long]
+[@F+fricative+voice] > [@F-voice]
+[@S+stop+voice] > [@S+fricative]
+l > ɾ / [+vowel]_[+vowel]
+r > ɾ
+[+nasal][@S+stop] > [@S+voice]
+[+vowel-long] > ∅ / [+obstruent]_[+obstruent]
+[@C+consonant+geminate] > [@C-geminate]
