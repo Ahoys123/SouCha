@@ -11,7 +11,7 @@ func main() {
 	vowel = a e i o u
 	alveolar = t d n r
 	justs = s l
-	[H:+alveolar][L:+justs] [L:+justs] > [H] r /
+	[H:{t d n r}][L:+justs] [L:+justs] > [L:] r /
 	a > / r _ r`)
 	// a{b c}d > b
 	fmt.Println(l.Evolve("atlʼarsi"))

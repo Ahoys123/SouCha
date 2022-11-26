@@ -66,7 +66,7 @@ func (r *Rule) Apply(text string) string {
 				b.WriteString(text[lastWritten:p0])
 				fmt.Printf("\t%s\n", r.to)
 				if r.to != nil {
-					b.WriteString(r.to.FollowPath(path))
+					b.WriteString(r.to.FollowPath(path, bindings))
 				}
 				i = p1
 				lastWritten = p1

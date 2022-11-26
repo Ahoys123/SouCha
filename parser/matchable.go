@@ -9,7 +9,7 @@ type Matchable interface {
 	// MatchStart returns if the begining of text matches.
 	MatchStart(txt string) (int, []int, map[string]Value)
 	// FollowPath returns the equivielent strucutre
-	FollowPath(path []int) string
+	FollowPath(path []int, bindings map[string]Value) string
 }
 
 // NewMatchable creates a new matchable from the string.
@@ -128,7 +128,7 @@ func (s *Sequence) MatchStart(text string) (int, []int, map[string]Value) {
 	return i, nil, totalBindings
 }
 
-func (s *Sequence) FollowPath(path []int) string {
+func (s *Sequence) FollowPath(path []int, bindings map[string]Value) string {
 	return "ERROR"
 }
 
@@ -157,9 +157,16 @@ func (s *Set) MatchStart(text string) (int, []int, map[string]Value) {
 	return -1, nil, nil
 }
 
-func (s *Set) FollowPath(path []int) string {
+func (s *Set) FollowPath(path []int, bindings map[string]Value) string {
 	lasti := len(path) - 1
-	return s.arr[path[lasti]].FollowPath(path[:lasti])
+
+	// if this set has a binding that is defined, return the binding
+	if v, ok := bindings[s.binding]; ok {
+		return string(v)
+	}
+
+	// else, continue following the path
+	return s.arr[path[lasti]].FollowPath(path[:lasti], bindings)
 }
 
 func (s *Set) String() string {
@@ -216,7 +223,7 @@ func waiter(txt string, on byte) int {
 	return len(txt)
 }
 
-func (v Value) FollowPath(path []int) string {
+func (v Value) FollowPath(path []int, bindings map[string]Value) string {
 	return string(v)
 }
 
