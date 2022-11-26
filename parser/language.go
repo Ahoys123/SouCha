@@ -14,7 +14,7 @@ func NewLanguage(txt string) (l *Language) {
 
 	l = &Language{}
 
-	features := map[string]ValueSet{}
+	features := map[string]*ValueSet{}
 	rules := []string{}
 
 	// Create feature sets from context & store rules as strings
@@ -31,7 +31,7 @@ func NewLanguage(txt string) (l *Language) {
 	}
 
 	// Create Universal set from union of all other sets
-	vs := ValueSet{}
+	vs := &ValueSet{}
 	for _, v := range features {
 		vs = vs.Union(v)
 	}
@@ -61,80 +61,25 @@ func (l *Language) Evolve(txt string) string {
 
 /*
 
-reserved chars:
-> / _ { } [ ] + - ( ) # ! | &
 
-implemented:
-> / _ { } ( ) # [ ] + - ! | &
+@manner stop = p b t d k g
+@manner nasal = m n ng
+voice = b m d g n ng
+@place bilabial = m p b
+@place alveolar = n t d
 
-not implemented:
-    + !
-    ! in env / outside []
-    + for 1 or more of
+[STOP = +stop-labial]{a {i u} {e o}} > [STOP -> +labial]{æ y œ} / {e i} _ [+stop]
 
-TODO:
-    multiple envs
-        allow for / (for multiple envs) and ! (for not envs)
-    more waiters
-        allow for + to wait on last char
-    backtracking on precondition sets
-        if one precond matches but from/postcond fails, try finding another in precond before continuing
-    assimilation
-        allow a "to" arg to take a certain feature from whatever "from" matches
-            could be [+nasal] > [@place] / _ [+stop@place]
-            @place = {bilabial alveolar velar}
-    simpler [!{phone}] notation?
+non-labial stops and a vowel to a labial and "a" when preceded by "e" and succeeded by a stop
 
-Base
-[X] a > b
-[X] a >
-    // a gets deleted everywhere
+Sequence{
+    Set{label: STOP, set: difference(union(None, stop), labial)},
+    Set{label: None, set:[a e i o u]}
+}
 
-Enviornments
-[X] a > b / c _ d
+TO
 
-Basic unnamed sets
-[X] a b > c
-[X] a b > c d
-[X] {a b} c > d e
-[X] {a {b c} d} e > {f g h} i
-
-Basic named sets
-[X] [a] > b
-[?] [a] > [b]
-    // provided len(a) == len(b)
-
-Arithmitic with named sets intrasectionally
-[X] [a+b] > c
-[X] [a+b+c] > d
-[X] [a-b] > c
-[X] [a+b-c] > d
-[X] [a-b-c] > d
-[X] [a-(b-c)] > d
-
-Arithmitic with named sets intersectionally (see Implementation)
-[ ] [a] > *[-a]
-*/
-
-/*
-
-Implementation of intersectional named sets
-
-stops = p b t d k g
-voice = m b n d ng g
-labial = p b m
-alveolar = t d n
-velar = k g ng
-    stops voice labial alveolar velar
-p = 1     0     1      0        0
-b = 1     1     1      0        0
-m = 0     1     1      0        0
-
-
-p t k > *[+voice]
-if p:
-    newMask = my mask
-    change [voice] flag on mask
-    look at all other masks, find closest related one
-
+Sequence{
+    Term{from: STOP, set: }
+}
 */

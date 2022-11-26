@@ -33,6 +33,7 @@ func (r *Rule) Apply(text string) string {
 	stages := [3]Matchable{r.precond, r.from, r.postcond}
 	cstage := 0
 
+	// path value initializationg
 	var path []int
 	p0, p1 := 0, 0
 	lastWritten := 0
@@ -40,6 +41,7 @@ func (r *Rule) Apply(text string) string {
 	// while in bounds of text
 	for i := 0; i < len(text); {
 
+		// go to the next stage
 	stageInc:
 		mlen := 0
 		var p []int
@@ -47,23 +49,17 @@ func (r *Rule) Apply(text string) string {
 			mlen, p = stages[cstage].MatchStart(text[i:])
 		}
 
-		//fmt.Printf("%s; %d; %d\n", text[i:], cstage, mlen)
-
-		if mlen != -1 {
-			//fmt.Printf("%s; %d; %d\n", text[i:], cstage, mlen)
+		if mlen != -1 { // if a match was found
 			cstage++
-
 			i += mlen
 
-			//fmt.Println(text[p1:])
-
 			switch cstage {
-			case 1:
+			case 1: // if going precondition -> from, set initial match position to first from index
 				p0 = i
-			case 2:
+			case 2: // if going from -> postcondition, set final match position to first postposition index
 				p1 = i
 				path = p
-			case 3:
+			case 3: // if found successful postcondition, reset cstage and append new value to string
 				cstage = 0
 				b.WriteString(text[lastWritten:p0])
 				if r.to != nil {
@@ -78,7 +74,6 @@ func (r *Rule) Apply(text string) string {
 			}
 
 		} else {
-
 			// if failed on postcondition, we need to recheck the condition; else, move on to next
 			if cstage != 2 {
 				i++
@@ -129,3 +124,8 @@ func (r *Rule) parseEnv() error {
 	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]), r.ctx)
 	return nil
 }
+
+// [C=+alveolar][V={a e i o u}]
+// matches ktam
+//          ^^
+// Then C = t, V = a

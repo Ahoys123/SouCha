@@ -33,6 +33,7 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 				last = strings.IndexByte(txt[i+1:], ']') + 1
 				vs, _ := NewVarSet(txt[i+1:i+last], ctx)
 				m = ValueSetToSet(vs)
+
 			}
 			seq.arr = append(seq.arr, collapse(m))
 
@@ -69,7 +70,7 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 // NewOptional allows a string of "" to match, along with any others.
 func NewOptional(txt string, ctx *RuleContext) (Matchable, int) {
 	m, i := NewMatchable(txt, ctx)
-	return &Set{[]Matchable{m, Value("")}}, i
+	return &Set{[]Matchable{m, Value("")}, ""}, i
 }
 
 // savePrev saves the previous value up to that point into seq if that text is not whitespace or empty.
@@ -132,7 +133,8 @@ func (s *Sequence) String() string {
 
 // Set satisfies MatchStart when any Matchable in it's array matches the begining of the text.
 type Set struct {
-	arr []Matchable
+	arr     []Matchable
+	binding string
 }
 
 func (s *Set) MatchStart(text string) (int, []int) {
@@ -150,7 +152,7 @@ func (s *Set) FollowPath(path []int) string {
 }
 
 func (s *Set) String() string {
-	return fmt.Sprintf("Set:%s", s.arr)
+	return fmt.Sprintf("Set(%s):%s", s.binding, s.arr)
 }
 
 // Value satisfies MatchStart when it matches the begining of the text.
