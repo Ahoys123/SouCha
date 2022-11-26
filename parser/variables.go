@@ -78,7 +78,7 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 		case ' ':
 			right = saveRight(txt, i, lwi, right, ctx)
 			lwi = i + 1
-		case '@':
+		case ':':
 			if i > lwi {
 				binding = txt[lwi:i]
 			}

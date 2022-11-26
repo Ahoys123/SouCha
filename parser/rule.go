@@ -29,6 +29,7 @@ func (l *Language) NewRule(rule string) *Rule {
 // Apply applies a rule to a string.
 func (r *Rule) Apply(text string) string {
 	b := strings.Builder{}
+	var bindings map[string]Value
 
 	stages := [3]Matchable{r.precond, r.from, r.postcond}
 	cstage := 0
@@ -46,7 +47,8 @@ func (r *Rule) Apply(text string) string {
 		mlen := 0
 		var p []int
 		if stages[cstage] != nil {
-			mlen, p = stages[cstage].MatchStart(text[i:])
+			mlen, p, bindings = stages[cstage].MatchStart(text[i:])
+			fmt.Println(bindings)
 		}
 
 		if mlen != -1 { // if a match was found
@@ -62,6 +64,7 @@ func (r *Rule) Apply(text string) string {
 			case 3: // if found successful postcondition, reset cstage and append new value to string
 				cstage = 0
 				b.WriteString(text[lastWritten:p0])
+				fmt.Printf("\t%s\n", r.to)
 				if r.to != nil {
 					b.WriteString(r.to.FollowPath(path))
 				}

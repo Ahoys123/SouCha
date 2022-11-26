@@ -7,7 +7,7 @@ import (
 
 type Matchable interface {
 	// MatchStart returns if the begining of text matches.
-	MatchStart(txt string) (int, []int)
+	MatchStart(txt string) (int, []int, map[string]Value)
 	// FollowPath returns the equivielent strucutre
 	FollowPath(path []int) string
 }
@@ -111,16 +111,21 @@ type Sequence struct {
 	arr []Matchable
 }
 
-func (s *Sequence) MatchStart(text string) (int, []int) {
+func (s *Sequence) MatchStart(text string) (int, []int, map[string]Value) {
 	i := 0
+	totalBindings := map[string]Value{}
 	for _, v := range s.arr {
-		if consumed, _ := v.MatchStart(text[i:]); consumed != -1 {
+		if consumed, _, bindings := v.MatchStart(text[i:]); consumed != -1 {
 			i += consumed
+			// add bindings
+			for k, v := range bindings {
+				totalBindings[k] = v
+			}
 		} else {
-			return -1, nil
+			return -1, nil, nil
 		}
 	}
-	return i, nil
+	return i, nil, totalBindings
 }
 
 func (s *Sequence) FollowPath(path []int) string {
@@ -137,13 +142,19 @@ type Set struct {
 	binding string
 }
 
-func (s *Set) MatchStart(text string) (int, []int) {
+func (s *Set) MatchStart(text string) (int, []int, map[string]Value) {
 	for i, v := range s.arr {
-		if consumed, path := v.MatchStart(text); consumed != -1 {
-			return consumed, append(path, i)
+		if consumed, path, bindings := v.MatchStart(text); consumed != -1 {
+			if s.binding != "" {
+				if bindings == nil {
+					bindings = map[string]Value{}
+				}
+				bindings[s.binding] = Value(text[:consumed])
+			}
+			return consumed, append(path, i), bindings
 		}
 	}
-	return -1, nil
+	return -1, nil, nil
 }
 
 func (s *Set) FollowPath(path []int) string {
@@ -158,13 +169,13 @@ func (s *Set) String() string {
 // Value satisfies MatchStart when it matches the begining of the text.
 type Value string
 
-func (v Value) MatchStart(text string) (int, []int) {
+func (v Value) MatchStart(text string) (int, []int, map[string]Value) {
 	vlen, tlen := len(v), len(text)
 	vi := 0
 	add := 0
 
 	if v == "" {
-		return 0, nil
+		return 0, nil, nil
 	}
 
 	for i := 0; i < (vlen+add) && i < tlen; i++ {
@@ -172,7 +183,7 @@ func (v Value) MatchStart(text string) (int, []int) {
 		case '#':
 			next := waiter(text[i:], ' ')
 			if next == -1 {
-				return -1, nil
+				return -1, nil, nil
 			}
 			add += next - 1
 			i += next - 1
@@ -181,14 +192,14 @@ func (v Value) MatchStart(text string) (int, []int) {
 		case text[i]:
 			vi++
 		default:
-			return -1, nil
+			return -1, nil, nil
 		}
 
 		if vi >= vlen {
-			return vlen + add, nil
+			return vlen + add, nil, nil
 		}
 	}
-	return -1, nil
+	return -1, nil, nil
 }
 
 // waiter stalls on a character for however long, returning -1 if the stalled character doesn't exist.

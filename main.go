@@ -10,10 +10,11 @@ func main() {
 	consonant = p t k b d g m n j
 	vowel = a e i o u
 	alveolar = t d n r
-	[H@+alveolar] > k /
+	justs = s l
+	[H:+alveolar][L:+justs] [L:+justs] > [H] r /
 	a > / r _ r`)
 	// a{b c}d > b
-	fmt.Println(l.Evolve("atsʼari"))
+	fmt.Println(l.Evolve("atlʼarsi"))
 }
 
 // [+stop+consonant+alveolar] > r / [+vowel+stress] _ [+vowel-stress]
