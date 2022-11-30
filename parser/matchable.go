@@ -159,6 +159,7 @@ func (s *Set) MatchStart(text string) (int, []int, map[string]Value) {
 
 func (s *Set) FollowPath(path []int, bindings map[string]Value) string {
 	lasti := len(path) - 1
+	fmt.Println(s)
 
 	// if this set has a binding that is defined, return the binding
 	if v, ok := bindings[s.binding]; ok {

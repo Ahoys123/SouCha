@@ -29,7 +29,7 @@ func (l *Language) NewRule(rule string) *Rule {
 // Apply applies a rule to a string.
 func (r *Rule) Apply(text string) string {
 	b := strings.Builder{}
-	var bindings map[string]Value
+	var bindings map[string]Value = map[string]Value{}
 
 	stages := [3]Matchable{r.precond, r.from, r.postcond}
 	cstage := 0
@@ -41,14 +41,16 @@ func (r *Rule) Apply(text string) string {
 
 	// while in bounds of text
 	for i := 0; i < len(text); {
-
 		// go to the next stage
 	stageInc:
 		mlen := 0
 		var p []int
+		var btemp map[string]Value
 		if stages[cstage] != nil {
-			mlen, p, bindings = stages[cstage].MatchStart(text[i:])
-			fmt.Println(bindings)
+			mlen, p, btemp = stages[cstage].MatchStart(text[i:])
+			for k, v := range btemp {
+				bindings[k] = v
+			}
 		}
 
 		if mlen != -1 { // if a match was found
@@ -64,12 +66,12 @@ func (r *Rule) Apply(text string) string {
 			case 3: // if found successful postcondition, reset cstage and append new value to string
 				cstage = 0
 				b.WriteString(text[lastWritten:p0])
-				fmt.Printf("\t%s\n", r.to)
 				if r.to != nil {
 					b.WriteString(r.to.FollowPath(path, bindings))
 				}
 				i = p1
 				lastWritten = p1
+				bindings = map[string]Value{}
 			}
 
 			if stages[cstage] == nil {
@@ -125,10 +127,6 @@ func (r *Rule) parseEnv() error {
 	}
 	r.precond, _ = NewMatchable(strings.TrimSpace(split[0]), r.ctx)
 	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]), r.ctx)
+	fmt.Println(r.postcond)
 	return nil
 }
-
-// [C=+alveolar][V={a e i o u}]
-// matches ktam
-//          ^^
-// Then C = t, V = a

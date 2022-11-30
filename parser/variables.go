@@ -66,7 +66,6 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 			lwi = i + 1
 		case '-', '!':
 			left = operationSwitch(txt, oper, i, lwi, left, right, ctx)
-			//fmt.Println(left)
 			right = nil
 			oper = difference
 			lwi = i + 1
@@ -118,8 +117,6 @@ func saveRight(txt string, i, lwi int, right *ValueSet, ctx *RuleContext) *Value
 // It returns what the new left should be, as well as making right safe to clear.
 func operationSwitch(txt string, oper uint8, i, lwi int, left *ValueSet, right *ValueSet, ctx *RuleContext) *ValueSet {
 	right = saveRight(txt, i, lwi, right, ctx)
-
-	//fmt.Printf("\t%s, %s, %d\n", left, right, oper)
 
 	if left == nil {
 		if right == nil {
@@ -192,3 +189,9 @@ func NewValueSet(txt string) (*ValueSet, int) {
 	}
 	return trms, len(txt)
 }
+
+/*
+A{p t k} B{p t k b d g}
+A ! B = A + !B
+union between !A and B = difference between B and A
+*/

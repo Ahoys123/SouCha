@@ -9,9 +9,9 @@ func main() {
 	l := parser.NewLanguage(`stop = p t k b d g
 	consonant = p t k b d g m n j
 	vowel = a e i o u
-	alveolar = t d n r
+	alveolar = t d n r ʼ
 	justs = s l
-	[H:{t d n r}][L:+justs] [L:+justs] > [L:] r /
+	[H:{t d n r}][L:+justs] > [L:] / _ [!{i}]
 	a > / r _ r`)
 	// a{b c}d > b
 	fmt.Println(l.Evolve("atlʼarsi"))
