@@ -1,19 +1,48 @@
 package parser
 
+import (
+	"log"
+)
+
 type RuleContext struct {
-	Features  map[string]*ValueSet
-	Universal *ValueSet
+	Features map[string]*ValueSet
 }
 
 // ValueSet is a special type of Set which only accepts Values as elements.
 type ValueSet struct {
 	set     map[Value]struct{}
 	binding string
+	not     bool
 }
 
 // Union returns a newly allocated map based on the union of both sets.
 // The returned set will return values that exist in EITHER set.
 func (ms0 *ValueSet) Union(ms1 *ValueSet) *ValueSet {
+	if ms0.not == ms1.not && ms0.not {
+		// use demorgan's law if both are nots; !1 | !2 = !(1 & 2)
+		ms0.not, ms1.not = false, false
+		unNot := ms0.Intersection(ms1)
+		unNot.not = true
+		ms0.not, ms1.not = true, true
+		return unNot
+	}
+
+	if ms0.not != ms1.not {
+		// use property !1 | 2 = !(1 & !2) from demorgans
+		var notNot, not *ValueSet
+		if ms0.not {
+			not, notNot = ms0, ms1
+		} else {
+			not, notNot = ms1, ms0
+		}
+
+		notNot.not, not.not = true, false // flip
+		unNot := notNot.Intersection(not)
+		unNot.not = true
+		notNot.not, not.not = false, true // unflip to previous state
+		return unNot
+	}
+
 	trms := &ValueSet{set: make(map[Value]struct{})}
 	for k := range ms0.set {
 		trms.set[k] = struct{}{}
@@ -24,24 +53,28 @@ func (ms0 *ValueSet) Union(ms1 *ValueSet) *ValueSet {
 	return trms
 }
 
-// Difference returns a newly allocated map based on the difference of both sets.
-// The returned set will return values that exist in the first set, but NOT the second one.
-func (ms0 *ValueSet) Difference(ms1 *ValueSet) *ValueSet {
-	trms := &ValueSet{set: make(map[Value]struct{})}
-	for k := range ms0.set {
-		if _, in := ms1.set[k]; !in {
-			trms.set[k] = struct{}{}
-		}
-	}
-	return trms
-}
-
 // Intersection returns a newly allocated map based on the intersection of both sets.
 // The returned set will return values that exist in BOTH sets.
 func (ms0 *ValueSet) Intersection(ms1 *ValueSet) *ValueSet {
+	if ms0.not == ms1.not && ms0.not {
+		// use demorgan's law if both are nots; !1 & !2 = !(1 | 2)
+		ms0.not, ms1.not = false, false
+		unNot := ms0.Union(ms1)
+		unNot.not = true
+		ms0.not, ms1.not = true, true
+		return unNot
+	}
+
+	var notNot, not *ValueSet
+	if ms0.not {
+		not, notNot = ms0, ms1
+	} else {
+		not, notNot = ms1, ms0
+	}
+
 	trms := &ValueSet{set: make(map[Value]struct{})}
-	for k := range ms0.set {
-		if _, in := ms1.set[k]; in {
+	for k := range notNot.set {
+		if _, in := not.set[k]; in != not.not { // if not == true, then if in set == false, add it
 			trms.set[k] = struct{}{}
 		}
 	}
@@ -54,23 +87,38 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 	var left, right *ValueSet
 	var binding string
 	var oper uint8
+	var notted bool
 	tlen := len(txt)
+
+	// A + !B
+	// A ! B
+	// -> go that way
 
 	lwi := 0 // last written index
 	for i := 0; i < tlen; i++ {
 		switch txt[i] {
 		case '+', '&':
-			left = operationSwitch(txt, oper, i, lwi, left, right, ctx)
+			right = saveRight(txt, i, lwi, right, ctx)
+			left = operationSwitch(txt, oper, i, lwi, left, right, ctx, notted)
+			notted = false
 			right = nil
 			oper = intersection
 			lwi = i + 1
-		case '-', '!':
-			left = operationSwitch(txt, oper, i, lwi, left, right, ctx)
-			right = nil
-			oper = difference
+		case '-', '!': // is equal to + !
+			right = saveRight(txt, i, lwi, right, ctx)
+
+			if right != nil { // is something like "Z + A ! B"
+				left = operationSwitch(txt, oper, i, lwi, left, right, ctx, notted)
+				right = nil
+				oper = intersection
+			} // else is Z + A + !B
+
+			notted = true
 			lwi = i + 1
 		case '|':
-			left = operationSwitch(txt, oper, i, lwi, left, right, ctx)
+			right = saveRight(txt, i, lwi, right, ctx)
+			left = operationSwitch(txt, oper, i, lwi, left, right, ctx, notted)
+			notted = false
 			right = nil
 			oper = union
 			lwi = i + 1
@@ -91,11 +139,12 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 			right = ms
 			i += consumed
 		case ')':
-			return operationSwitch(txt, oper, i, lwi, left, right, ctx), i + 1
+			right = saveRight(txt, i, lwi, right, ctx)
+			return operationSwitch(txt, oper, i, lwi, left, right, ctx, notted), i + 1
 		}
 	}
 
-	left = operationSwitch(txt, oper, tlen, lwi, left, right, ctx)
+	left = operationSwitch(txt, oper, tlen, lwi, left, right, ctx, notted)
 	left.binding = binding
 
 	return left, tlen
@@ -115,20 +164,14 @@ func saveRight(txt string, i, lwi int, right *ValueSet, ctx *RuleContext) *Value
 
 // operationSwitch consolodates left and right into one set through the operation defined by oper.
 // It returns what the new left should be, as well as making right safe to clear.
-func operationSwitch(txt string, oper uint8, i, lwi int, left *ValueSet, right *ValueSet, ctx *RuleContext) *ValueSet {
-	right = saveRight(txt, i, lwi, right, ctx)
+func operationSwitch(txt string, oper uint8, i, lwi int, left *ValueSet, right *ValueSet, ctx *RuleContext, notted bool) *ValueSet {
 
 	if left == nil {
+		// CHECK!!!!
 		if right == nil {
-			switch oper {
-			case union:
-				return ctx.Universal
-			case difference:
-				return ctx.Universal
-			case intersection:
-				return &ValueSet{}
-			}
+			return &ValueSet{not: true}
 		}
+		right.not = notted
 		return right
 	}
 
@@ -136,28 +179,28 @@ func operationSwitch(txt string, oper uint8, i, lwi int, left *ValueSet, right *
 		return left
 	}
 
+	right.not = notted
+
 	switch oper {
 	case union:
 		return left.Union(right)
-	case difference:
-		return left.Difference(right)
 	case intersection:
 		return left.Intersection(right)
 	}
 
+	log.Fatalln("ERROR!")
 	return left
 }
 
 // Constant for operations on ValueSets
 const (
 	union uint8 = iota
-	difference
 	intersection
 )
 
 // ValueSetToSet converts a ValueSet to a *Set for use in Matchables.
 func ValueSetToSet(ms *ValueSet) *Set {
-	s := &Set{[]Matchable{}, ms.binding}
+	s := &Set{[]Matchable{}, ms.binding, ms.not}
 	for k := range ms.set {
 		s.arr = append(s.arr, k)
 	}

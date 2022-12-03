@@ -30,15 +30,8 @@ func NewLanguage(txt string) (l *Language) {
 		}
 	}
 
-	// Create Universal set from union of all other sets
-	vs := &ValueSet{}
-	for _, v := range features {
-		vs = vs.Union(v)
-	}
-
 	l.ctx = &RuleContext{
 		features,
-		vs,
 	}
 
 	// convert string rules to *Rule types, AFTER context has been established

@@ -70,7 +70,7 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 // NewOptional allows a string of "" to match, along with any others.
 func NewOptional(txt string, ctx *RuleContext) (Matchable, int) {
 	m, i := NewMatchable(txt, ctx)
-	return &Set{[]Matchable{m, Value("")}, ""}, i
+	return &Set{[]Matchable{m, Value("")}, "", false}, i
 }
 
 // savePrev saves the previous value up to that point into seq if that text is not whitespace or empty.
@@ -93,6 +93,10 @@ func collapse(m Matchable) Matchable {
 			return e
 		}
 	case *Set:
+		if e.binding != "" || e.not {
+			// contains important info on bindings or notting; keep the full set
+			return e
+		}
 		switch len(e.arr) {
 		case 0:
 			return nil
@@ -129,7 +133,11 @@ func (s *Sequence) MatchStart(text string) (int, []int, map[string]Value) {
 }
 
 func (s *Sequence) FollowPath(path []int, bindings map[string]Value) string {
-	return "ERROR"
+	b := strings.Builder{}
+	for _, v := range s.arr {
+		b.WriteString(v.FollowPath(path, bindings))
+	}
+	return b.String()
 }
 
 func (s *Sequence) String() string {
@@ -140,11 +148,16 @@ func (s *Sequence) String() string {
 type Set struct {
 	arr     []Matchable
 	binding string
+	not     bool
 }
 
 func (s *Set) MatchStart(text string) (int, []int, map[string]Value) {
 	for i, v := range s.arr {
 		if consumed, path, bindings := v.MatchStart(text); consumed != -1 {
+			if s.not {
+				// if not, we can say that this set matches, thefore fails.
+				return -1, nil, nil
+			}
 			if s.binding != "" {
 				if bindings == nil {
 					bindings = map[string]Value{}
@@ -153,6 +166,10 @@ func (s *Set) MatchStart(text string) (int, []int, map[string]Value) {
 			}
 			return consumed, append(path, i), bindings
 		}
+	}
+
+	if s.not {
+		return 0, nil, nil
 	}
 	return -1, nil, nil
 }
@@ -171,7 +188,11 @@ func (s *Set) FollowPath(path []int, bindings map[string]Value) string {
 }
 
 func (s *Set) String() string {
-	return fmt.Sprintf("Set(%s):%s", s.binding, s.arr)
+	not := ""
+	if s.not {
+		not = "!"
+	}
+	return fmt.Sprintf("%sSet(%s):%s", not, s.binding, s.arr)
 }
 
 // Value satisfies MatchStart when it matches the begining of the text.
