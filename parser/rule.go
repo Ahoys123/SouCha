@@ -128,6 +128,6 @@ func (r *Rule) parseEnv() error {
 	}
 	r.precond, _ = NewMatchable(strings.TrimSpace(split[0]), r.ctx)
 	r.postcond, _ = NewMatchable(strings.TrimSpace(split[1]), r.ctx)
-	fmt.Println(r.postcond)
+	//fmt.Println(r.postcond)
 	return nil
 }

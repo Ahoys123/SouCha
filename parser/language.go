@@ -46,7 +46,6 @@ func (l *Language) Evolve(txt string) string {
 	txt = " " + txt + " "
 	for _, rule := range l.rules {
 		txt = rule.Apply(txt)
-
 		fmt.Println(txt)
 	}
 	return strings.TrimSpace(txt)

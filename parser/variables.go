@@ -94,6 +94,11 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 	// A ! B
 	// -> go that way
 
+	// basic logic: consume characters until an operator is reached;
+	// when it is, take the characters between the previous operator or the begining of the string
+	// and parse them (idgaf how), then combine them according to the PREVIOUS operator seen
+	// then set the previously seen operator to be the current operator.
+
 	lwi := 0 // last written index
 	for i := 0; i < tlen; i++ {
 		switch txt[i] {
@@ -143,7 +148,7 @@ func NewVarSet(txt string, ctx *RuleContext) (*ValueSet, int) {
 			return operationSwitch(txt, oper, i, lwi, left, right, ctx, notted), i + 1
 		}
 	}
-
+	right = saveRight(txt, tlen, lwi, right, ctx)
 	left = operationSwitch(txt, oper, tlen, lwi, left, right, ctx, notted)
 	left.binding = binding
 
@@ -165,7 +170,6 @@ func saveRight(txt string, i, lwi int, right *ValueSet, ctx *RuleContext) *Value
 // operationSwitch consolodates left and right into one set through the operation defined by oper.
 // It returns what the new left should be, as well as making right safe to clear.
 func operationSwitch(txt string, oper uint8, i, lwi int, left *ValueSet, right *ValueSet, ctx *RuleContext, notted bool) *ValueSet {
-
 	if left == nil {
 		// CHECK!!!!
 		if right == nil {

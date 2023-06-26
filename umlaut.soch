@@ -1,0 +1,28 @@
+vowel = a; i; u; e; o; y; ø; a i u e o y ø
+consonant = p t k b d g m n ng s h ' r l j w r̥ ɬ c
+
+DEROMANIZER
+á í ú > a; i; u;
+
+i u > e o / _([+consonant])a
+a > æ / _([+consonant]){i e}
+height harmony spreads
+
+
+v z > h > / [+vowel] _ [+vowel]
+ai au ia ua ui > aj aw ja wa he
+kw wk > kʷ
+w{i e} {i e}w > {y ø}
+{t k}j j{t k} > c cj
+aj uj oj ej > e y ø i
+j > / _ [+vowel]
+
+[+vowel][!{;}] > / #([+consonant])[+vowel]([+consonant]) _
+
+POSSIBLE ERROR:
+h([V:+vowel]) > ʰ([V:]); / {p t k(ʷ)} _ [!{;}]
+
+{r l}h > r̥ ɬ
+r l > r̥ ɬ / # _
+
+POSSIBLE ERROR
