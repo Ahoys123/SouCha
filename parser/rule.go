@@ -23,7 +23,6 @@ func (l *Language) NewRule(rule string) *Rule {
 
 	r.parseEnv() // split env into parths; precond _ poscond
 
-	fmt.Println(r.from, r.to, r.precond, r.postcond)
 	return r
 }
 

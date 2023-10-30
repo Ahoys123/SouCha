@@ -22,6 +22,8 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 		case '{', '(', '[':
 			savePrev(seq, txt, i, lci)
 
+			// ERR: i == len(txt)-1, then potential call to txt[i+1:] -> txt[len(txt):]
+
 			var m Matchable
 			var last int
 			switch txt[i] {
@@ -30,7 +32,7 @@ func NewMatchable(txt string, ctx *RuleContext) (Matchable, int) {
 			case '(':
 				m, last = NewOptional(txt[i+1:], ctx)
 			case '[':
-				last = strings.IndexByte(txt[i+1:], ']') + 1
+				last = strings.IndexByte(txt[i+1:], ']') + 1 // DANGER: might
 				vs, _ := NewVarSet(txt[i+1:i+last], ctx)
 				m = ValueSetToSet(vs)
 

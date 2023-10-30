@@ -1,3 +1,8 @@
 vowel = a i u e o
+labial = p b m
+stop = p b t d k g
+fricative = f s z x
+alveolar = t d s z r l
+consonant = b c d f g h j k l m n p q r s t v w x z
 
-[+vowel] > q / h_
+{j,[+consonant -stop]} z > l r / [+vowel]_[+vowel]

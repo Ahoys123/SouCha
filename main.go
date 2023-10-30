@@ -10,7 +10,9 @@ import (
 func main() {
 	l := parser.NewLanguage(readFile("test.soch"))
 	// a{b c}d > b
-	fmt.Println(l.Evolve("hire this me?"))
+	fmt.Println(l.Evolve("azˤʃa"))
+	fmt.Println(l.Evolve("afˤʃa"))
+	fmt.Println(l.Evolve("atˤʃa"))
 }
 
 func readFile(filepath string) string {

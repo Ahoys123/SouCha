@@ -26,6 +26,7 @@ func NewLanguage(txt string) (l *Language) {
 		} else if strings.ContainsRune(line, '>') {
 			rules = append(rules, line)
 		} else if !strings.Contains(line, "//") && !(len(strings.TrimSpace(line)) == 0) {
+			// ERR: could'nt parse
 			fmt.Printf("couldn't parse line %d, \"%s\"\n", i, line)
 		}
 	}
@@ -36,7 +37,8 @@ func NewLanguage(txt string) (l *Language) {
 
 	// convert string rules to *Rule types, AFTER context has been established
 	for _, v := range rules {
-		l.rules = append(l.rules, l.NewRule(v))
+		rule := l.NewRule(v)
+		l.rules = append(l.rules, rule)
 	}
 
 	return l
