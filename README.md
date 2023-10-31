@@ -26,6 +26,7 @@ Any of these four components can contain:
    * `()` indicates logical groupings, NOT optionality– use `|setname` for optionality instead.
    * `{}` indicates an anonymous set; it acts as a named set outside of the braces, but the symbols inside are assumed to be phonemes, not named sets.
    * `NAME:` at the beginning of square brackets indicates the set's name. It can be any token with no spaces and referenced later using `[NAME:]` like any other phoneme to describe the specific phoneme matched previously. 
+
 `#` is a special character in `preCondition` and `postCondition`, indicating a word boundary (beginning/end of a word).
 
 #### Named Sets
